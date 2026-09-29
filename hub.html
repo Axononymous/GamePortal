@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Game Portal</title>
+<style>
+:root{--bg:#090a1c;--text:#eaf0ff;--accent:#7b5cff;--r:16px;--rs:10px;--bw:1px;--blur:0px;--cw:210px;--hs:none;--hv:-5px;--font:system-ui,sans-serif;
+--card:color-mix(in srgb,var(--text) 7%,transparent);--line:color-mix(in srgb,var(--text) 16%,transparent);--mute:color-mix(in srgb,var(--text) 62%,var(--bg));--solid:var(--bg);--navbg:color-mix(in srgb,var(--bg) 82%,transparent)}
+html.tr{--card:#0000;--line:#ffffff45;--mute:#ffffffb8;--solid:#05060f;--navbg:#0000}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--text);font:15px/1.45 var(--font);overflow:hidden}
+html.tr body{text-shadow:0 1px 8px #000c}
+button,input,select{font:inherit;color:inherit}
+#bgimg{position:fixed;inset:-30px;background-size:cover;background-position:center;z-index:-3}
+#bgdim{position:fixed;inset:0;z-index:-2}
+.bg{position:fixed;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
+.bg i{position:absolute;width:440px;height:440px;border-radius:50%;filter:blur(90px);opacity:.25;background:var(--accent);animation:dr 16s ease-in-out infinite}
+.bg i:nth-child(1){left:-100px;top:-120px}
+.bg i:nth-child(2){right:-100px;top:40%;background:color-mix(in srgb,var(--accent),#ff4d9d 60%);animation-delay:-6s}
+.noanim .bg i{animation:none}.hasbg .bg{display:none}
+@keyframes dr{50%{transform:translate(50px,40px) scale(1.15)}}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+#app[data-nav=left],#app[data-nav=right]{flex-direction:row}
+#main{flex:1;min-width:0;min-height:0;overflow:auto}
+#nav{flex:none;display:flex;justify-content:center;gap:6px;padding:8px;background:var(--navbg);backdrop-filter:blur(var(--blur));border-top:var(--bw) solid var(--line)}
+#nav button{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:78px;padding:8px 10px;border:0;border-radius:var(--rs);background:none;color:var(--mute);cursor:pointer;font-size:.72rem;transition:.15s}
+#nav button:hover{color:var(--text)}
+#nav button.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,transparent)}
+#nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+[data-nav=left] #nav,[data-nav=right] #nav{flex-direction:column;border-top:0;padding:12px 8px}
+[data-nav=left] #nav{order:-1;border-right:var(--bw) solid var(--line)}
+[data-nav=right] #nav{border-left:var(--bw) solid var(--line)}
+.nolabels #nav span{display:none}.nolabels #nav button{min-width:0}
+.page{display:none;padding:clamp(16px,3vw,36px);max-width:1200px;margin:0 auto}
+.page.on{display:block;animation:in .25s}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+h1{font-size:1.8rem}h2{margin:26px 0 12px;font-size:1.05rem}
+.hero{font-size:clamp(2rem,6vw,3.4rem);letter-spacing:-.02em;text-shadow:none!important;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent),#ff4d9d 60%));-webkit-background-clip:text;background-clip:text;color:transparent}
+.mute{color:var(--mute)}
+.card,.panel{background:var(--card);border:var(--bw) solid var(--line);border-radius:var(--r);backdrop-filter:blur(var(--blur))}
+.in{width:100%;padding:.6em 1em;border-radius:var(--rs);border:var(--bw) solid var(--line);background:var(--card);outline:0}
+.in:focus{border-color:var(--accent)}
+.btn{border:var(--bw) solid var(--line);background:var(--card);border-radius:var(--rs);padding:.5em .9em;cursor:pointer;transition:.15s}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:var(--accent);border-color:var(--accent);color:#fff;text-shadow:none}
+select.btn option{color:#111;background:#fff}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.bar h1{margin-right:auto}.bar .in{max-width:280px}
+#hq{max-width:560px;margin-top:14px}
+#chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw),1fr));gap:16px}
+.card{overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card:hover,.card:focus-visible{transform:translateY(var(--hv));border-color:var(--accent);box-shadow:var(--hs);outline:0}
+.art{position:relative;aspect-ratio:16/10;display:grid;place-items:center;font-size:2.6rem;font-weight:800;color:#fff;text-shadow:none}
+.art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sv{position:absolute;top:8px;right:8px;padding:.2em .7em;border:0;border-radius:var(--rs);background:#000a;color:#fff;font-size:.75rem;cursor:pointer;text-shadow:none}
+.sv.on{background:var(--accent)}
+.info{padding:10px 14px 14px}.info h3{font-size:1rem}
+.info p{color:var(--mute);font-size:.85rem;margin-top:2px}
+.info small{display:block;margin-top:8px;color:var(--mute);font-size:.75rem}
+.nodesc .info p{display:none}
+.list .cards{grid-template-columns:1fr}.list .card{display:flex;align-items:center}.list .art{width:130px;flex:none;font-size:1.8rem}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:24px 0 0}
+.tile{padding:26px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:.15s}
+.tile:hover{border-color:var(--accent)}.tile b{font-size:1.5rem}.tile span{color:var(--mute)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:18px}
+.panel{padding:18px}.panel h2{margin:0 0 6px}
+.set{margin-top:14px}.set>label{display:block;font-size:.8rem;color:var(--mute);margin-bottom:6px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tg{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.panel input[type=range]{width:100%}.panel input{accent-color:var(--accent)}
+input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--line);border-radius:var(--rs);background:none;cursor:pointer}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;border:1px solid var(--line);vertical-align:-1px}
+#player{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;background:var(--solid)}
+#bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:var(--bw) solid var(--line)}
+#ptitle{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#frame{flex:1;border:0;width:100%;background:#000}
+#msg{position:absolute;inset:52px 0 0;display:grid;place-items:center;text-align:center;background:var(--solid);color:var(--mute);z-index:1;padding:20px}
+.spin{width:36px;height:36px;margin:0 auto 12px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(1turn)}}
+#toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,30px);opacity:0;z-index:60;background:var(--accent);color:#fff;padding:.5em 1.2em;border-radius:var(--rs);transition:.3s;pointer-events:none;text-shadow:none}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:640px){#nav button{min-width:0;flex:1}[data-nav=left] #nav button,[data-nav=right] #nav button{flex:none;min-width:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="bgimg"></div><div id="bgdim"></div><div class="bg"><i></i><i></i></div>
+<div id="app" data-nav="bottom">
+<div id="main">
+  <section class="page on" id="p-home">
+    <h1 class="hero" id="hname">Game Portal</h1>
+    <p class="mute" id="clock"></p>
+    <input class="in" id="hq" type="search" placeholder="Search games and tools" autocomplete="off">
+    <div id="hbody"></div>
+  </section>
+  <section class="page" id="p-lib">
+    <div class="bar">
+      <h1 id="lt">Games</h1>
+      <input class="in" id="q" type="search" placeholder="Search" autocomplete="off">
+      <select class="btn" data-k="sort" title="Sort"><option value="az">A to Z</option><option value="za">Z to A</option><option value="recent">Recently played</option><option value="plays">Most played</option></select>
+      <button class="btn" id="view">List view</button>
+      <button class="btn" id="rand">Random</button>
+    </div>
+    <div id="chips"></div>
+    <div class="cards" id="grid"></div>
+    <p class="mute" id="empty" hidden></p>
+  </section>
+  <section class="page" id="p-settings">
+    <h1>Settings</h1>
+    <div class="grid2">
+      <div class="panel"><h2>Color theme</h2>
+        <div class="seg" id="themes"></div>
+        <div class="set" id="cust" hidden><label>Custom background</label><input type="color" data-k="cbg"><label style="margin-top:10px">Custom text</label><input type="color" data-k="ctext"></div>
+        <div class="set"><label>Accent color</label><div class="seg"><input type="color" data-k="accent"><button class="btn" id="accreset">Theme default</button></div></div>
+      </div>
+      <div class="panel"><h2>Interface style</h2>
+        <div class="seg" id="uis"></div>
+        <div class="set"><label>Font</label><select class="btn" data-k="font"><option value="auto">Style default</option><option value="sans">Sans</option><option value="serif">Serif</option><option value="mono">Mono</option></select></div>
+        <div class="set"><label>Corner roundness</label><input type="range" data-k="radius" min="0" max="32"></div>
+        <div class="set"><label>Card size</label><input type="range" data-k="size" min="150" max="320" step="10"></div>
+        <div class="tg"><span>Animated background</span><input type="checkbox" data-k="anim"></div>
+        <div class="tg"><span>Show descriptions</span><input type="checkbox" data-k="desc"></div>
+      </div>
+      <div class="panel"><h2>Background image</h2>
+        <div class="set"><input type="file" id="bgfile" accept="image/*"></div>
+        <div class="set"><label>Dim</label><input type="range" data-k="dim" min="0" max="85"></div>
+        <div class="set"><label>Blur</label><input type="range" data-k="blur" min="0" max="20"></div>
+        <div class="set"><button class="btn" id="bgclear">Remove image</button></div>
+      </div>
+      <div class="panel"><h2>Navigation bar</h2>
+        <div class="seg"><button class="btn" data-set="nav" data-v="bottom">Bottom</button><button class="btn" data-set="nav" data-v="left">Left</button><button class="btn" data-set="nav" data-v="right">Right</button></div>
+        <div class="tg"><span>Show labels</span><input type="checkbox" data-k="labels"></div>
+      </div>
+      <div class="panel"><h2>General</h2>
+        <div class="set"><label>Portal name</label><input class="in" type="text" data-k="name" maxlength="40"></div>
+        <div class="tg"><span>24-hour clock</span><input type="checkbox" data-k="clock24"></div>
+        <div class="set seg"><button class="btn" id="sclear">Clear favorites and history</button><button class="btn" id="sreset">Reset settings</button></div>
+      </div>
+    </div>
+  </section>
+</div>
+<nav id="nav">
+  <button data-pg="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/></svg><span>Home</span></button>
+  <button data-pg="games"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M10 8l6 4-6 4z"/></svg><span>Games</span></button>
+  <button data-pg="tools"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg><span>Tools</span></button>
+  <button data-pg="settings"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Settings</span></button>
+</nav>
+</div>
+<section id="player" hidden>
+  <div id="bar"><button class="btn" id="back">Back</button><b id="ptitle"></b><button class="btn" id="pfav">Save</button><button class="btn" id="reload">Restart</button><button class="btn" id="full">Fullscreen</button></div>
+  <div id="msg"></div>
+  <iframe id="frame" title="Content" allow="fullscreen; autoplay; gamepad"></iframe>
+</section>
+<div id="toast"></div>
+<script>
+(()=>{
+const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ROOT=document.baseURI; /* folder hub.html was loaded from (the launcher sets it) */
+const mem={},store={
+  get(k,d){try{const v=localStorage.getItem(k);if(v!==null)return JSON.parse(v)}catch(e){}return k in mem?mem[k]:d},
+  set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const T={night:['Night','#090a1c','#eaf0ff','#7b5cff'],light:['Light','#eef0fa','#1a1c33','#5b4bff'],dusk:['Dusk','#1c0f26','#fbe9ff','#e05bff'],forest:['Forest','#08170f','#e6fff1','#2fd07a'],ocean:['Ocean','#06202e','#e3f6ff','#1ec8ff'],sunset:['Sunset','#241012','#ffeede','#ff7a3d'],rose:['Rose','#fff1f4','#3a1421','#e5426f'],graphite:['Graphite','#141414','#eeeeee','#9aa0a6'],transparent:['Transparent','#05060f','#ffffff','#7b5cff'],custom:['Custom','#101820','#f2f2f2','#7b5cff']};
+const GLOW='0 16px 40px color-mix(in srgb,var(--accent),transparent 70%)';
+const UI={modern:{n:'Modern',r:16,bw:1,bl:0,f:'sans',hs:GLOW,hv:-5},minimal:{n:'Minimal',r:6,bw:1,bl:0,f:'sans',hs:'none',hv:-2},glass:{n:'Glass',r:24,bw:1,bl:22,f:'sans',hs:GLOW,hv:-5},bold:{n:'Bold',r:10,bw:3,bl:0,f:'sans',hs:'6px 6px 0 var(--accent)',hv:-4},terminal:{n:'Terminal',r:0,bw:2,bl:0,f:'mono',hs:'4px 4px 0 var(--accent)',hv:0}};
+const FONT={sans:'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',serif:'Georgia,"Times New Roman",serif',mono:'ui-monospace,Consolas,"Courier New",monospace'};
+const DEF={name:'Game Portal',theme:'night',cbg:'#101820',ctext:'#f2f2f2',accent:'',ui:'modern',font:'auto',radius:null,size:210,anim:true,desc:true,nav:'bottom',labels:true,clock24:false,view:'grid',sort:'az',dim:35,blur:0};
+let cfg=Object.assign({},DEF,store.get('gp_cfg',{})),D=Object.assign({fav:{},plays:{},last:{}},store.get('gp_data',{})),bg=store.get('gp_bg','');
+let lib={games:[],tools:[]},pg='home',kind='games',tag='all',cur=null,ready=false,loadErr=false,tt;
+const saveC=()=>store.set('gp_cfg',cfg),saveD=()=>store.set('gp_data',D);
+const key=g=>g.kind+':'+g.id,all=()=>[...lib.games.map(g=>({...g,kind:'games'})),...lib.tools.map(g=>({...g,kind:'tools'}))];
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)}
+function colors(){const c=cfg.theme==='custom'?['',cfg.cbg,cfg.ctext,T.custom[3]]:(T[cfg.theme]||T.night);return{bg:c[1],text:c[2],accent:c[3]}}
+
+function apply(){
+  const c=colors(),U=UI[cfg.ui]||UI.modern,h=document.documentElement,s=h.style,b=document.body,r=cfg.radius==null?U.r:cfg.radius;
+  s.setProperty('--bg',c.bg);s.setProperty('--text',c.text);s.setProperty('--accent',cfg.accent||c.accent);
+  s.setProperty('--r',r+'px');s.setProperty('--rs',Math.round(r*.6)+'px');s.setProperty('--bw',U.bw+'px');s.setProperty('--blur',U.bl+'px');
+  s.setProperty('--hs',U.hs);s.setProperty('--hv',U.hv+'px');s.setProperty('--cw',cfg.size+'px');
+  s.setProperty('--font',FONT[cfg.font==='auto'?U.f:cfg.font]||FONT.sans);
+  h.classList.toggle('tr',cfg.theme==='transparent');
+  $('app').dataset.nav=cfg.nav;
+  b.classList.toggle('nolabels',!cfg.labels);b.classList.toggle('noanim',!cfg.anim);b.classList.toggle('nodesc',!cfg.desc);b.classList.toggle('list',cfg.view==='list');b.classList.toggle('hasbg',!!bg);
+  $('bgimg').style.backgroundImage=bg?`url(${bg})`:'none';$('bgimg').style.filter=`blur(${cfg.blur}px)`;
+  $('bgdim').style.background=bg?`rgba(0,0,0,${cfg.dim/100})`:'none';
+  document.title=$('hname').textContent=cfg.name||DEF.name;$('view').textContent=cfg.view==='list'?'Grid view':'List view';
+}
+function sync(){
+  const c=colors();
+  document.querySelectorAll('[data-k]').forEach(el=>{
+    const k=el.dataset.k;let v=cfg[k];
+    if(k==='accent')v=cfg.accent||c.accent;
+    if(k==='radius')v=cfg.radius==null?(UI[cfg.ui]||UI.modern).r:cfg.radius;
+    if(el.type==='checkbox')el.checked=!!v;else el.value=v;
+  });
+  document.querySelectorAll('[data-set]').forEach(b=>b.classList.toggle('on',cfg[b.dataset.set]===b.dataset.v));
+  $('cust').hidden=cfg.theme!=='custom';
+}
+const hue=s=>[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7);
+function card(g){
+  const k=key(g),h=hue(k),p=D.plays[k]||0,f=D.fav[k];
+  return `<article class="card" tabindex="0" data-key="${esc(k)}"><div class="art" style="background:linear-gradient(135deg,hsl(${h} 65% 46%),hsl(${(h+55)%360} 65% 30%))">${g.thumb?`<img src="${esc(g.thumb)}" alt="" loading="lazy">`:esc(g.title[0].toUpperCase())}<button class="sv ${f?'on':''}" data-fav="${esc(k)}">${f?'Saved':'Save'}</button></div><div class="info"><h3>${esc(g.title)}</h3><p>${esc(g.desc||'')}</p><small>${esc((g.tags||[]).join(', '))}${p?' | played '+p+'x':''}</small></div></article>`;
+}
+const match=(g,q)=>`${g.title} ${g.desc||''} ${(g.tags||[]).join(' ')}`.toLowerCase().includes(q);
+function libList(){
+  const q=$('q').value.trim().toLowerCase();
+  const r=lib[kind].map(g=>({...g,kind})).filter(g=>(!q||match(g,q))&&(tag==='all'||(tag==='fav'?D.fav[key(g)]:tag==='recent'?D.last[key(g)]:(g.tags||[]).includes(tag))));
+  const P=g=>D.plays[key(g)]||0,L=g=>D.last[key(g)]||0;
+  return r.sort({az:(a,b)=>a.title.localeCompare(b.title),za:(a,b)=>b.title.localeCompare(a.title),recent:(a,b)=>L(b)-L(a),plays:(a,b)=>P(b)-P(a)}[cfg.sort]);
+}
+function renderLib(){
+  const r=libList(),tags=[...new Set(lib[kind].flatMap(g=>g.tags||[]))].sort();
+  $('grid').innerHTML=r.map(card).join('');
+  $('empty').hidden=r.length>0;
+  $('empty').textContent=loadErr?'Could not load library.json. Make sure it sits next to hub.html on GitHub.':lib[kind].length?'No matches. Try a different search or filter.':`No ${kind} yet. Add .html files to the ${kind} folder on GitHub and list them in library.json.`;
+  $('chips').innerHTML=[['all','All'],['fav','Favorites'],['recent','Recent'],...tags.map(t=>[t,t])].map(([k,l])=>`<button class="btn ${k===tag?'on':''}" data-tag="${esc(k)}">${esc(l)}</button>`).join('');
+}
+function renderHome(){
+  const q=$('hq').value.trim().toLowerCase(),A=all(),grid=a=>`<div class="cards">${a.map(card).join('')}</div>`;
+  if(q){const r=A.filter(g=>match(g,q));$('hbody').innerHTML=r.length?'<h2>Results</h2>'+grid(r):'<p class="mute" style="margin-top:20px">Nothing found.</p>';return}
+  const rec=A.filter(g=>D.last[key(g)]).sort((a,b)=>D.last[key(b)]-D.last[key(a)]).slice(0,6),fav=A.filter(g=>D.fav[key(g)]);
+  $('hbody').innerHTML=`<div class="tiles"><button class="panel tile" data-pg="games"><b>Games</b><span>${lib.games.length} available</span></button><button class="panel tile" data-pg="tools"><b>Tools</b><span>${lib.tools.length} available</span></button></div>`+
+    (rec.length?'<h2>Continue</h2>'+grid(rec):'')+(fav.length?'<h2>Favorites</h2>'+grid(fav):'')+
+    (rec.length||fav.length?'':'<p class="mute" style="margin-top:20px">'+(loadErr?'Could not load library.json.':'Open a game or tool and it will show up here. Saved items appear here too.')+'</p>');
+}
+const refresh=()=>pg==='home'?renderHome():pg==='settings'?0:renderLib();
+function go(p){
+  pg=p;document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  $(p==='games'||p==='tools'?'p-lib':'p-'+p).classList.add('on');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.pg===p));
+  if(p==='games'||p==='tools'){kind=p;tag='all';$('q').value='';$('lt').textContent=p==='games'?'Games':'Tools'}
+  refresh();$('main').scrollTop=0;
+}
+function tick(){const d=new Date();$('clock').textContent=d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+'  |  '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:!cfg.clock24})}
+function favBtn(){$('pfav').textContent=cur&&D.fav[key(cur)]?'Saved':'Save'}
+function toggleFav(k){D.fav[k]=!D.fav[k];if(!D.fav[k])delete D.fav[k];saveD();favBtn();refresh()}
+function inject(html,base){
+  const t='<base href="'+base+'">';html=html.replace(/<base\b[^>]*>/gi,'');
+  if(/<head[^>]*>/i.test(html))return html.replace(/<head[^>]*>/i,m=>m+t);
+  if(/<html[^>]*>/i.test(html))return html.replace(/<html[^>]*>/i,m=>m+'<head>'+t+'</head>');
+  return t+html;
+}
+async function open(g){
+  if(!g)return;
+  cur=g;ready=false;$('player').hidden=false;$('ptitle').textContent=g.title;favBtn();$('frame').srcdoc='';
+  $('msg').hidden=false;$('msg').innerHTML='<div><div class="spin"></div>Loading '+esc(g.title)+'...</div>';
+  try{
+    const url=new URL(g.file,ROOT).href,r=await fetch(url);
+    if(!r.ok)throw Error('HTTP '+r.status+' (file not found, or the repo is not public)');
+    const txt=await r.text();if(cur!==g)return;
+    ready=true;$('frame').srcdoc=inject(txt,new URL('.',url).href);
+    const k=key(g);D.plays[k]=(D.plays[k]||0)+1;D.last[k]=Date.now();saveD();
+  }catch(e){
+    $('msg').innerHTML='<div><h3>Could not load '+esc(g.title)+'</h3><p>'+esc(e.message)+'</p><br><button class="btn" id="retry">Try again</button></div>';
+  }
+}
+$('frame').onload=()=>{if(!ready)return;$('msg').hidden=true;$('frame').focus();try{$('frame').contentWindow.focus()}catch(e){}};
+
+document.addEventListener('click',e=>{
+  const t=e.target;let n;
+  if(n=t.closest('[data-fav]'))return toggleFav(n.dataset.fav);
+  if(n=t.closest('.card'))return open(all().find(g=>key(g)===n.dataset.key));
+  if(n=t.closest('[data-tag]')){tag=n.dataset.tag;return renderLib()}
+  if(n=t.closest('[data-pg]'))return go(n.dataset.pg);
+  if(n=t.closest('[data-set]')){const k=n.dataset.set;cfg[k]=n.dataset.v;if(k==='ui')cfg.radius=null;saveC();apply();return sync()}
+  if(t.id==='retry')open(cur);
+});
+document.addEventListener('input',e=>{
+  const t=e.target,k=t.dataset.k;if(!k)return;
+  cfg[k]=t.type==='checkbox'?t.checked:t.type==='range'?+t.value:t.value;
+  saveC();apply();if(k==='clock24')tick();if(k==='sort'||k==='desc')refresh();
+});
+document.addEventListener('keydown',e=>{
+  if(!$('player').hidden)return;
+  const a=document.activeElement;
+  if(e.key==='/'&&!/INPUT|SELECT/.test(a.tagName)&&pg!=='settings'){e.preventDefault();$(pg==='home'?'hq':'q').focus()}
+  else if(e.key==='Enter'&&a.classList.contains('card'))a.click();
+  else if(e.key==='Escape'&&/INPUT/.test(a.tagName)){a.value='';a.blur();refresh()}
+});
+$('hq').oninput=renderHome;$('q').oninput=renderLib;
+$('view').onclick=()=>{cfg.view=cfg.view==='list'?'grid':'list';saveC();apply()};
+$('rand').onclick=()=>{const r=libList();if(r.length)open(r[Math.random()*r.length|0]);else toast('Nothing to pick from')};
+$('back').onclick=()=>{cur=null;ready=false;$('frame').srcdoc='';$('player').hidden=true;refresh()};
+$('pfav').onclick=()=>cur&&toggleFav(key(cur));
+$('reload').onclick=()=>open(cur);
+$('full').onclick=()=>{const f=$('frame');(f.requestFullscreen||f.webkitRequestFullscreen||(()=>toast('Fullscreen is not available')))?.call(f)};
+$('accreset').onclick=()=>{cfg.accent='';saveC();apply();sync()};
+$('sclear').onclick=()=>{D={fav:{},plays:{},last:{}};saveD();refresh();toast('Favorites and history cleared')};
+$('sreset').onclick=()=>{cfg=Object.assign({},DEF);saveC();apply();sync();toast('Settings reset')};
+$('bgclear').onclick=()=>{bg='';try{localStorage.removeItem('gp_bg')}catch(e){}apply()};
+$('bgfile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
+  im.onload=()=>{
+    const s=Math.min(1,1920/Math.max(im.width,im.height)),c=document.createElement('canvas');
+    c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    bg=c.toDataURL('image/jpeg',.8);URL.revokeObjectURL(u);
+    try{localStorage.setItem('gp_bg',JSON.stringify(bg));toast('Background saved')}catch(x){toast('Image applied, but too large to remember after you close this tab')}
+    apply();
+  };
+  im.onerror=()=>toast('That file is not an image');im.src=u;e.target.value='';
+};
+
+(async()=>{
+  $('themes').innerHTML=Object.entries(T).map(([k,v])=>`<button class="btn" data-set="theme" data-v="${k}"><i class="dot" style="background:linear-gradient(135deg,${v[1]} 50%,${v[3]} 50%)"></i>${v[0]}</button>`).join('');
+  $('uis').innerHTML=Object.entries(UI).map(([k,v])=>`<button class="btn" data-set="ui" data-v="${k}">${v.n}</button>`).join('');
+  apply();sync();tick();setInterval(tick,15000);
+  const ok=g=>g&&g.id&&g.title&&g.file;
+  try{
+    const r=await fetch(new URL('library.json',ROOT).href,{cache:'no-cache'});if(!r.ok)throw 0;
+    let j=await r.json();if(Array.isArray(j))j={games:j};
+    lib.games=(j.games||[]).filter(ok);lib.tools=(j.tools||[]).filter(ok);
+  }catch(e){loadErr=true}
+  go('home');
+})();
+})();
+</script>
+</body>
+</html>
