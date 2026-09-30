@@ -76,7 +76,17 @@ function shell(inner){
     '.s{width:46px;height:46px;margin:0 auto 18px;border:5px solid #ffffff30;border-top-color:#22e4ff;border-radius:50%;animation:r .8s linear infinite}' +
     '@keyframes r{to{transform:rotate(1turn)}}p{color:#b9c3ee}</style></head><body><div>' + inner + '</div></body></html>';
 }
-function put(win, html){ win.document.open(); win.document.write(html.replace(/<\/script/gi, '<\\/script')); win.document.close(); }
+function put(win, html){
+  /* Escape inner closes so document.write does not cut the block early,
+     but keep the FINAL close tag (the block's own end). Escaping all of
+     them leaves the script unterminated and nothing runs (blank portal).
+     NOTE: the end-tag string is built by concatenation so this file itself
+     contains no literal close tag inside its own script block. */
+  const end = "<" + "/script";
+  const s = String(html), i = s.toLowerCase().lastIndexOf(end);
+  const safe = i < 0 ? s : s.slice(0, i).replace(/<\/script/gi, "<\\" + "/script") + s.slice(i);
+  win.document.open(); win.document.write(safe); win.document.close();
+}
 
 /* Same file, different CDN host. */
 function urlFor(host){ const u = new URL(HUB_URL); u.hostname = host; return u.href; }
