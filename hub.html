@@ -51,7 +51,7 @@ select.btn option{color:#111;background:#fff}
 #hq{max-width:560px;margin-top:14px}
 #chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw),1fr));gap:16px}
-.card{content-visibility:auto;contain-intrinsic-size:auto 250px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card{content-visibility:auto;contain-intrinsic-size:auto 250px;contain:layout style paint;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s;will-change:transform}
 .card:hover,.card:focus-visible{transform:translateY(var(--hv));border-color:var(--accent);box-shadow:var(--hs);outline:0}
 .art{position:relative;aspect-ratio:var(--ar,16/10);display:grid;place-items:center;font-size:2.6rem;font-weight:800;color:#fff;text-shadow:none}
 .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -108,6 +108,7 @@ body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{displ
       <button class="btn" id="view">List view</button>
       <button class="btn" id="rand">Random</button>
       <button class="btn" id="covedit">Edit covers</button>
+      <button class="btn" id="preloadall">Preload all</button>
     </div>
     <div id="chips"></div>
     <div class="cards" id="grid"></div>
@@ -141,7 +142,7 @@ body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{displ
       </div>
       <div class="panel"><h2>Tab disguise</h2>
         <p class="mute">Changes the tab title and icon. It only changes how the tab looks.</p>
-        <div class="set"><label>Look like</label><select class="btn" data-k="cloak"><option value="none">Nothing (use portal name)</option><option value="docs">Google Docs</option><option value="slides">Google Slides</option><option value="sheets">Google Sheets</option><option value="drive">Google Drive</option><option value="classroom">Google Classroom</option><option value="schoology">Schoology</option><option value="khan">Khan Academy</option><option value="custom">Custom</option></select></div>
+        <div class="set"><label>Look like</label><select class="btn" data-k="cloak"><option value="none">Nothing (use portal name)</option><option value="docs">Google Docs</option><option value="slides">Google Slides</option><option value="sheets">Google Sheets</option><option value="drive">Google Drive</option><option value="classroom">Google Classroom</option><option value="schoology">Schoology</option><option value="khan">Khan Academy</option><option value="forms">Google Forms</option><option value="calendar">Google Calendar</option><option value="canvas">Canvas</option><option value="quizlet">Quizlet</option><option value="duolingo">Duolingo</option><option value="wikipedia">Wikipedia</option><option value="youtube">YouTube</option><option value="custom">Custom</option></select></div>
         <div id="ccust" hidden>
           <div class="set"><label>Custom title</label><input class="in" type="text" data-k="ctitle" maxlength="80"></div>
           <div class="set"><label>Copy the icon from a site (example: khanacademy.org)</label><input class="in" type="text" data-k="cdom" maxlength="60"></div>
@@ -157,6 +158,8 @@ body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{displ
         <div class="tg"><span>Show clock on Home</span><input type="checkbox" data-k="clock"></div>
         <div class="tg"><span>Open games in fullscreen</span><input type="checkbox" data-k="gfs"></div>
         <div class="tg"><span>Ask before closing this tab</span><input type="checkbox" data-k="warn"></div>
+        <div class="tg"><span>Preload games on hover</span><input type="checkbox" data-k="preload"></div>
+        <div class="set"><button class="btn" id="clearcache">Clear game cache</button></div>
       </div>
       <div class="panel"><h2>Covers and GitHub</h2>
         <p class="mute">Turn on Edit covers in the Games or Tools page, then press Cover on a card. To also save covers into your GitHub repo, paste a fine-grained token limited to this one repo with Contents: Read and write.</p>
@@ -198,20 +201,21 @@ body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{displ
 <div id="toast"></div>
 <script>
 (()=>{
-const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const _domCache={};
+const $=i=>_domCache[i]||(_domCache[i]=document.getElementById(i)),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ROOT=new URL('.',document.baseURI).href; /* the folder hub.html lives in (works when launched or opened directly) */
 const RM=ROOT.match(/\/gh\/([^/@]+)\/([^/@]+)(?:@([^/]+))?\/(.*)$/),RI=RM?{user:RM[1],repo:RM[2],ver:RM[3]||'',sub:RM[4]}:null;
 const mem={},store={
   get(k,d){try{const v=localStorage.getItem(k);if(v!==null)return JSON.parse(v)}catch(e){}return k in mem?mem[k]:d},
   set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const tmo=ms=>{const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal};
-const T={night:['Night','#090a1c','#eaf0ff','#7b5cff'],light:['Light','#eef0fa','#1a1c33','#5b4bff'],dusk:['Dusk','#1c0f26','#fbe9ff','#e05bff'],forest:['Forest','#08170f','#e6fff1','#2fd07a'],ocean:['Ocean','#06202e','#e3f6ff','#1ec8ff'],sunset:['Sunset','#241012','#ffeede','#ff7a3d'],rose:['Rose','#fff1f4','#3a1421','#e5426f'],graphite:['Graphite','#141414','#eeeeee','#9aa0a6'],mint:['Mint','#eafaf1','#12332a','#14a37f'],lavender:['Lavender','#f2eefc','#2a2144','#8a63f2'],coffee:['Coffee','#1f1712','#f3e6d8','#c58a4b'],crimson:['Crimson','#14080a','#ffe9ec','#e0243c'],transparent:['Transparent','#05060f','#ffffff','#7b5cff'],custom:['Custom','#101820','#f2f2f2','#7b5cff']};
+const T={night:['Night','#090a1c','#eaf0ff','#7b5cff'],light:['Light','#eef0fa','#1a1c33','#5b4bff'],dusk:['Dusk','#1c0f26','#fbe9ff','#e05bff'],forest:['Forest','#08170f','#e6fff1','#2fd07a'],ocean:['Ocean','#06202e','#e3f6ff','#1ec8ff'],sunset:['Sunset','#241012','#ffeede','#ff7a3d'],rose:['Rose','#fff1f4','#3a1421','#e5426f'],graphite:['Graphite','#141414','#eeeeee','#9aa0a6'],mint:['Mint','#eafaf1','#12332a','#14a37f'],lavender:['Lavender','#f2eefc','#2a2144','#8a63f2'],coffee:['Coffee','#1f1712','#f3e6d8','#c58a4b'],crimson:['Crimson','#14080a','#ffe9ec','#e0243c'],transparent:['Transparent','#05060f','#ffffff','#7b5cff'],custom:['Custom','#101820','#f2f2f2','#7b5cff'],midnight:['Midnight','#0a0e1a','#e0e6ff','#4a6fff'],neon:['Neon','#0a0a0a','#00ff88','#00ff88'],cyberpunk:['Cyberpunk','#0d0221','#ff006e','#00f5d4'],warm:['Warm','#2a1f14','#f5e6d3','#d4a574'],cold:['Cold','#1a2332','#e8f0f7','#5b9bd5'],solar:['Solar','#1a1a00','#fff8dc','#ffd700'],lunar:['Lunar','#1c1c1e','#e8e8ed','#a0a0b0'],aurora:['Aurora','#0a1628','#e0f7fa','#00e5ff'],candy:['Candy','#2d1b2e','#ffe4f0','#ff69b4'],ocean-deep:['Ocean Deep','#001f3f','#e0f7fa','#0077b6'],forest-dark:['Forest Dark','#0a1f0a','#e8f5e9','#2e7d32'],desert:['Desert','#2d1f0a','#f5e6c8','#c17c24'],arctic:['Arctic','#e8f4f8','#1a3a4a','#4a90a4'],volcanic:['Volcanic','#1a0a0a','#ffe0d6','#ff4500']};
 /* [label, tab title, site the icon is copied from, fallback icon color] */
-const CLOAK={docs:['Google Docs','Untitled document - Google Docs','docs.google.com','#4285f4'],slides:['Google Slides','Untitled presentation - Google Slides','slides.google.com','#f4b400'],sheets:['Google Sheets','Untitled spreadsheet - Google Sheets','sheets.google.com','#0f9d58'],drive:['Google Drive','My Drive - Google Drive','drive.google.com','#1a73e8'],classroom:['Google Classroom','Classroom','classroom.google.com','#0f9d58'],schoology:['Schoology','Home | Schoology','app.schoology.com','#0077c8'],khan:['Khan Academy','Khan Academy | Free Online Courses, Lessons & Practice','www.khanacademy.org','#14bf96']};
+const CLOAK={docs:['Google Docs','Untitled document - Google Docs','docs.google.com','#4285f4'],slides:['Google Slides','Untitled presentation - Google Slides','slides.google.com','#f4b400'],sheets:['Google Sheets','Untitled spreadsheet - Google Sheets','sheets.google.com','#0f9d58'],drive:['Google Drive','My Drive - Google Drive','drive.google.com','#1a73e8'],classroom:['Google Classroom','Classroom','classroom.google.com','#0f9d58'],schoology:['Schoology','Home | Schoology','app.schoology.com','#0077c8'],khan:['Khan Academy','Khan Academy | Free Online Courses, Lessons & Practice','www.khanacademy.org','#14bf96'],forms:['Google Forms','Untitled form - Google Forms','docs.google.com','#673ab7'],calendar:['Google Calendar','Google Calendar','calendar.google.com','#4285f4'],canvas:['Canvas','Dashboard','canvas.instructure.com','#e0243c'],quizlet:['Quizlet','Quizlet','quizlet.com','#4255ff'],duolingo:['Duolingo','Duolingo','duolingo.com','#58cc02'],wikipedia:['Wikipedia','Wikipedia','www.wikipedia.org','#000000'],youtube:['YouTube','YouTube','www.youtube.com','#ff0000']};
 const GLOW='0 16px 40px color-mix(in srgb,var(--accent),transparent 70%)';
 const UI={modern:{n:'Modern',r:16,bw:1,bl:0,f:'sans',hs:GLOW,hv:-5},minimal:{n:'Minimal',r:6,bw:1,bl:0,f:'sans',hs:'none',hv:-2},glass:{n:'Glass',r:24,bw:1,bl:22,f:'sans',hs:GLOW,hv:-5},aqua:{n:'Aqua',r:30,bw:1,bl:16,f:'sans',hs:GLOW,hv:-6},soft:{n:'Soft',r:28,bw:0,bl:0,f:'sans',hs:'0 14px 30px #0005',hv:-4},neon:{n:'Neon',r:12,bw:1,bl:0,f:'sans',hs:'0 0 0 1px var(--accent),0 0 26px color-mix(in srgb,var(--accent) 70%,transparent)',hv:-4},paper:{n:'Paper',r:4,bw:1,bl:0,f:'serif',hs:'0 5px 0 var(--line)',hv:-3},bold:{n:'Bold',r:10,bw:3,bl:0,f:'sans',hs:'6px 6px 0 var(--accent)',hv:-4},retro:{n:'Retro',r:0,bw:3,bl:0,f:'mono',hs:'8px 8px 0 var(--accent)',hv:-4},terminal:{n:'Terminal',r:0,bw:2,bl:0,f:'mono',hs:'4px 4px 0 var(--accent)',hv:0}};
 const FONT={sans:'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',serif:'Georgia,"Times New Roman",serif',mono:'ui-monospace,Consolas,"Courier New",monospace'};
-const DEF={name:'Game Portal',theme:'night',cbg:'#101820',ctext:'#f2f2f2',accent:'',ui:'modern',font:'auto',radius:null,size:210,anim:false,desc:true,nav:'bottom',labels:true,clock24:false,view:'grid',sort:'az',dim:35,blur:0,perf:'auto',start:'home',shape:'wide',fs:100,plays:true,clock:true,gfs:false,warn:false,cloak:'none',ctitle:'',cdom:'',cimg:'',remember:false};
+const DEF={name:'Game Portal',theme:'night',cbg:'#101820',ctext:'#f2f2f2',accent:'',ui:'modern',font:'auto',radius:null,size:210,anim:false,desc:true,nav:'bottom',labels:true,clock24:false,view:'grid',sort:'az',dim:35,blur:0,perf:'auto',start:'home',shape:'wide',fs:100,plays:true,clock:true,gfs:false,warn:false,cloak:'none',ctitle:'',cdom:'',cimg:'',remember:false,preload:true};
 let cfg=Object.assign({},DEF,store.get('gp_cfg',{})),D=Object.assign({fav:{},plays:{},last:{}},store.get('gp_data',{})),bg=store.get('gp_bg',''),covers=store.get('gp_cov',{}),token=store.get('gp_tok','');
 let lib={games:[],tools:[]},ALL=[],MAP=new Map(),lastMan={games:[],tools:[]},pg='home',kind='games',tag='all',cur=null,ready=false,notes=[],cap=96,tt,sct,aq,bt,ck='',frameUrl='',covKey='',covMode=false;
 const col=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
@@ -378,14 +382,15 @@ const weak=(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4
 function apply(){
   const c=colors(),U=UI[cfg.ui]||UI.modern,h=document.documentElement,s=h.style,b=document.body,r=cfg.radius==null?U.r:cfg.radius;
   const perf=cfg.perf==='on'||(cfg.perf==='auto'&&weak);
+  const perfAggressive=perf&&cfg.perf==='on';
   s.setProperty('--bg',c.bg);s.setProperty('--text',c.text);s.setProperty('--accent',cfg.accent||c.accent);
   s.setProperty('--r',r+'px');s.setProperty('--rs',Math.round(r*.6)+'px');s.setProperty('--bw',U.bw+'px');s.setProperty('--blur',(perf?0:U.bl)+'px');
-  s.setProperty('--hs',U.hs);s.setProperty('--hv',U.hv+'px');s.setProperty('--cw',cfg.size+'px');
+  s.setProperty('--hs',perfAggressive?'none':U.hs);s.setProperty('--hv',perfAggressive?'0px':U.hv+'px');s.setProperty('--cw',cfg.size+'px');
   s.setProperty('--ar',{wide:'16/10',square:'1/1',tall:'3/4'}[cfg.shape]||'16/10');
   s.setProperty('--font',FONT[cfg.font==='auto'?U.f:cfg.font]||FONT.sans);
   h.classList.toggle('tr',cfg.theme==='transparent');
   $('app').dataset.nav=cfg.nav;b.style.fontSize=(15*cfg.fs/100)+'px';
-  b.classList.toggle('nolabels',!cfg.labels);b.classList.toggle('noanim',!cfg.anim);b.classList.toggle('nodesc',!cfg.desc);b.classList.toggle('list',cfg.view==='list');
+  b.classList.toggle('nolabels',!cfg.labels);b.classList.toggle('noanim',!cfg.anim||perfAggressive);b.classList.toggle('nodesc',!cfg.desc);b.classList.toggle('list',cfg.view==='list');
   b.classList.toggle('hasbg',!!bg);b.classList.toggle('perf',perf);b.classList.toggle('nopc',!cfg.plays);b.classList.toggle('covmode',covMode);
   $('bgdim').style.background=bg?`rgba(0,0,0,${cfg.dim/100})`:'none';setBg();
   $('hname').textContent=cfg.name||DEF.name;$('clock').hidden=!cfg.clock;$('view').textContent=cfg.view==='list'?'Grid view':'List view';
@@ -587,7 +592,7 @@ document.addEventListener('click',e=>{
   if(t.id==='retry')open(cur);
 });
 let hv=null,ht;
-const warm=e=>{const c=e.target.closest&&e.target.closest('.card');if(!c||c===hv)return;hv=c;clearTimeout(ht);ht=setTimeout(()=>{const g=MAP.get(c.dataset.key);if(g&&!(navigator.connection&&navigator.connection.saveData))getGame(new URL(g.file,ROOT).href).catch(()=>{})},250)};
+const warm=e=>{const c=e.target.closest&&e.target.closest('.card');if(!c||c===hv)return;hv=c;clearTimeout(ht);ht=setTimeout(()=>{const g=MAP.get(c.dataset.key);if(g&&cfg.preload&&!(navigator.connection&&navigator.connection.saveData))getGame(new URL(g.file,ROOT).href).catch(()=>{})},100)};
 document.addEventListener('pointerover',warm);document.addEventListener('focusin',warm);document.addEventListener('touchstart',warm,{passive:true});
 document.addEventListener('input',e=>{
   const t=e.target,k=t.dataset.k;if(!k)return;
@@ -611,6 +616,8 @@ $('lscan').onclick=async()=>{$('lstat').textContent='Scanning...';await loadLib(
 $('view').onclick=()=>{cfg.view=cfg.view==='list'?'grid':'list';saveC();apply()};
 $('rand').onclick=()=>{const r=libList();if(r.length)open(r[Math.random()*r.length|0]);else toast('Nothing to pick from')};
 $('covedit').onclick=()=>{covMode=!covMode;document.body.classList.toggle('covmode',covMode);$('covedit').classList.toggle('on',covMode);if(covMode)toast(RI&&token?'Click Cover on a card. It will also be saved to GitHub.':'Click Cover on a card. Add a GitHub token in Settings to also save it to your repo.',3500)};
+$('preloadall').onclick=()=>{const r=libList();if(!r.length)return toast('Nothing to preload');let n=0;for(const g of r){if(!(navigator.connection&&navigator.connection.saveData)){getGame(new URL(g.file,ROOT).href).catch(()=>{});n++}}toast('Preloading '+n+' items...',2000)};
+$('clearcache').onclick=()=>{GC.clear();reval.clear();caches.delete(CN).then(()=>toast('Game cache cleared')).catch(()=>toast('Could not clear cache'))};
 $('covfile').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';const g=MAP.get(covKey);if(!f||!g)return;
   try{
