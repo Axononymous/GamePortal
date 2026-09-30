@@ -295,7 +295,9 @@ function exportAll(){
 /* ---- Network: mirrors ---- */
 const HOSTS=['cdn.jsdelivr.net','fastly.jsdelivr.net','gcore.jsdelivr.net','testingcf.jsdelivr.net','quantil.jsdelivr.net','originfastly.jsdelivr.net'];
 async function fetchMirror(href,opt){ /* small files: tries the next jsDelivr host if one is unreachable or slow */
-  const u=new URL(href),list=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])];let err;
+  let u;try{u=new URL(href)}catch(e){const r=await fetch(href,opt);if(r.ok||r.status<500)return r;throw Error('HTTP '+r.status)}
+  if(u.protocol!=='http:'&&u.protocol!=='https:'){const r=await fetch(u.href,opt);if(r.ok||(r.status&&r.status<500))return r;throw Error('HTTP '+(r.status||'0'))}
+  const list=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])];let err;
   for(const x of list){
     const c=new AbortController(),t=setTimeout(()=>c.abort(),8000);
     try{u.hostname=x;const r=await fetch(u.href,{...opt,signal:c.signal});if(r.ok||r.status<500)return r;err=Error('HTTP '+r.status)}catch(e){err=e}finally{clearTimeout(t)}
@@ -303,7 +305,9 @@ async function fetchMirror(href,opt){ /* small files: tries the next jsDelivr ho
   throw err;
 }
 function race(url){ /* games: start on the main host, add a backup host every 0.8 s (or at once on failure), first answer wins */
-  const u=new URL(url),hs=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])].slice(0,6),cs=[];
+  let u;try{u=new URL(url)}catch(e){return fetch(url)}
+  if(u.protocol!=='http:'&&u.protocol!=='https:')return fetch(url);
+  const hs=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])].slice(0,6),cs=[];
   return new Promise((res,rej)=>{
     let done=false,fails=0,last,started=0;
     const begin=i=>{
@@ -359,12 +363,14 @@ function prep(buf,base,gk){ /* builds the page as a Blob: no giant strings for b
 /* ---- Look & feel ---- */
 function colors(){const c=cfg.theme==='custom'?['',cfg.cbg,cfg.ctext,T.custom[3]]:(T[cfg.theme]||T.night);return{bg:c[1],text:c[2],accent:c[3]}}
 function setIcon(href){document.querySelectorAll('link[rel~=icon]').forEach(l=>l.remove());const l=document.createElement('link');l.rel='icon';l.href=href;document.head.appendChild(l)}
-function letterIcon(ch,c){const k=document.createElement('canvas');k.width=k.height=64;const x=k.getContext('2d');x.fillStyle=c;x.beginPath();x.roundRect?x.roundRect(0,0,64,64,14):x.rect(0,0,64,64);x.fill();x.fillStyle='#fff';x.font='bold 40px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(ch,32,36);return k.toDataURL()}
+function letterIcon(ch,c){try{const k=document.createElement('canvas');k.width=k.height=64;const x=k.getContext('2d');if(!x)return '';x.fillStyle=c;x.beginPath();x.roundRect?x.roundRect(0,0,64,64,14):x.rect(0,0,64,64);x.fill();x.fillStyle='#fff';x.font='bold 40px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(ch,32,36);return k.toDataURL()}catch(e){return ''}}
 function applyCloak(){
   const c=CLOAK[cfg.cloak],cu=cfg.cloak==='custom',title=c?c[1]:cu&&cfg.ctitle?cfg.ctitle:(cfg.name||DEF.name);
   document.title=title;
   const sig=[cfg.cloak,cfg.cdom,cfg.cimg.length,cfg.ctitle,cfg.name,cfg.accent,cfg.theme].join('|');if(sig===ck)return;ck=sig;
-  setIcon(letterIcon(title[0].toUpperCase(),c?c[3]:cfg.accent||colors().accent));
+  try{
+  const li=letterIcon(title[0].toUpperCase(),c?c[3]:cfg.accent||colors().accent);if(li)setIcon(li);
+  }catch(e){}
   if(cu&&cfg.cimg)return setIcon(cfg.cimg);
   const dom=c?c[2]:cu?cfg.cdom:'';
   if(dom){const href='https://www.google.com/s2/favicons?domain='+encodeURIComponent(dom)+'&sz=64',im=new Image();im.onload=()=>{if(ck===sig)setIcon(href)};im.src=href}
@@ -374,7 +380,9 @@ function setBg(){
   if(!bg){el.style.backgroundImage='none';return}
   if(!cfg.blur){el.style.backgroundImage=`url(${bg})`;return}
   clearTimeout(bt);bt=setTimeout(()=>{ /* blur once on a small copy instead of live on a full-screen layer */
-    const im=new Image();im.onload=()=>{const w=480,h=Math.round(w*im.height/im.width),k=document.createElement('canvas');k.width=w;k.height=h;const x=k.getContext('2d');x.filter='blur('+Math.max(1,cfg.blur/4)+'px)';x.drawImage(im,-20,-20,w+40,h+40);el.style.backgroundImage=`url(${k.toDataURL('image/jpeg',.7)})`};im.src=bg;
+    try{
+    const im=new Image();im.onload=()=>{try{const w=480,h=Math.round(w*im.height/im.width),k=document.createElement('canvas');k.width=w;k.height=h;const x=k.getContext('2d');if(!x)return;x.filter='blur('+Math.max(1,cfg.blur/4)+'px)';x.drawImage(im,-20,-20,w+40,h+40);el.style.backgroundImage=`url(${k.toDataURL('image/jpeg',.7)})`}catch(e){}};im.src=bg;
+    }catch(e){}
   },200);
 }
 const weak=(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4;
@@ -482,6 +490,7 @@ async function loadLib(force){
     else notes.push('library.json returned HTTP '+r.status+' at '+r.url);
   }catch(e){notes.push('could not fetch library.json ('+e.message+')')}
   const paths=auto?await sp:[];if(auto)notes.push(...sn);
+  if(!RI)notes.push('local file mode: auto-detect is off here. Open this portal through launcher.html (loads the GitHub repo from the CDN), or place library.json plus games/ and tools/ folders next to hub.html and serve over http');
   lastMan=man;lib=build(paths,man);decorate();
   if(miss&&!ALL.length)notes.unshift('library.json was not found at '+miss);
 }
@@ -503,7 +512,7 @@ function libList(){
   const P=g=>D.plays[g._key]||0,L=g=>D.last[g._key]||0;
   return r.sort(s==='recent'?(a,b)=>L(b)-L(a):(a,b)=>P(b)-P(a));
 }
-const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))more()},{root:$('main'),rootMargin:'700px'});
+const io=(()=>{try{if(typeof IntersectionObserver==='undefined')throw 0;return new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))more()},{root:$('main'),rootMargin:'700px'})}catch(e){return{observe(){},unobserve(){},disconnect(){}}}})();
 function more(){
   const b=$('grid').querySelector('[data-more]');if(!b)return;
   const r=libList(),a=cap;cap+=96;
@@ -513,7 +522,7 @@ function more(){
 function renderLib(){
   const r=libList(),tags=[...new Set(lib[kind].flatMap(g=>g.tags||[]))].sort();
   $('grid').innerHTML=r.slice(0,cap).map(card).join('')+(r.length>cap?`<button class="btn" data-more="1" style="grid-column:1/-1">Show more (${r.length-cap} left)</button>`:'');
-  const mb=$('grid').querySelector('[data-more]');if(mb)io.observe(mb);
+  const mb=$('grid').querySelector('[data-more]');if(mb)try{io.observe(mb)}catch(e){mb.click&&mb.click()}
   $('empty').hidden=r.length>0;
   $('empty').textContent=lib[kind].length?'No matches. Try a different search or filter.':`No ${kind} found. Put each game in its own folder inside the ${kind} folder on GitHub. `+notes.join('. ');
   $('chips').innerHTML=[['all','All'],['fav','Favorites'],['recent','Recent'],...tags.map(t=>[t,t])].map(([k,l])=>`<button class="btn ${k===tag?'on':''}" data-tag="${esc(k)}">${esc(l)}</button>`).join('');
@@ -554,6 +563,10 @@ async function open(g){
     ready=true;setFrame(URL.createObjectURL(blob));
     D.plays[g._key]=(D.plays[g._key]||0)+1;D.last[g._key]=Date.now();saveD();
   }catch(e){
+    try{ /* local fallback: open the file directly (no save-isolation shim) so file:// and plain http folders still play */
+      const direct=new URL(g.file,ROOT).href;
+      if(direct.startsWith('file:')||new URL(direct).origin===location.origin){ready=true;setFrame(direct);D.plays[g._key]=(D.plays[g._key]||0)+1;D.last[g._key]=Date.now();saveD();return}
+    }catch(x){}
     $('msg').innerHTML='<div><h3>Could not load '+esc(g.title)+'</h3><p>'+esc(e.message)+'</p><br><button class="btn" id="retry">Try again</button></div>';
   }
 }
@@ -672,14 +685,14 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)sv.flush()}
 addEventListener('beforeunload',e=>{if(cfg.warn){e.preventDefault();e.returnValue=''}});
 
 (async()=>{
-  $('themes').innerHTML=Object.entries(T).map(([k,v])=>`<button class="btn" data-set="theme" data-v="${k}"><i class="dot" style="background:linear-gradient(135deg,${v[1]} 50%,${v[3]} 50%)"></i>${v[0]}</button>`).join('');
-  $('uis').innerHTML=Object.entries(UI).map(([k,v])=>`<button class="btn" data-set="ui" data-v="${k}">${v.n}</button>`).join('');
-  apply();sync();tick();setInterval(tick,30000);
+  try{$('themes').innerHTML=Object.entries(T).map(([k,v])=>`<button class="btn" data-set="theme" data-v="${k}"><i class="dot" style="background:linear-gradient(135deg,${v[1]} 50%,${v[3]} 50%)"></i>${v[0]}</button>`).join('')}catch(e){}
+  try{$('uis').innerHTML=Object.entries(UI).map(([k,v])=>`<button class="btn" data-set="ui" data-v="${k}">${v.n}</button>`).join('')}catch(e){}
+  try{apply()}catch(e){}try{sync()}catch(e){}try{tick()}catch(e){}try{setInterval(tick,30000)}catch(e){}
   try{if(RI){const l=document.createElement('link');l.rel='preconnect';l.href=new URL(ROOT).origin;document.head.appendChild(l)}}catch(e){}
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
   $('hbody').innerHTML='<p class="mute" style="margin-top:20px">Loading library...</p>';
-  await loadLib();
-  go(['home','games','tools'].includes(cfg.start)?cfg.start:'home');
+  try{await Promise.race([loadLib(),new Promise((_,rej)=>setTimeout(()=>rej(Error('library load timed out')),25000))])}catch(e){try{notes.push('library load problem: '+e.message)}catch(x){}}
+  try{go(['home','games','tools'].includes(cfg.start)?cfg.start:'home')}catch(e){try{pg='home';renderHome()}catch(x){}}
 })();
 })();
 </script>
