@@ -13,12 +13,12 @@ html.tr{--card:#0000;--line:#ffffff45;--mute:#ffffffb8;--solid:#05060f;--navbg:#
 body{background:var(--bg);color:var(--text);font:15px/1.45 var(--font);overflow:hidden}
 html.tr body{text-shadow:0 1px 8px #000c}
 button,input,select{font:inherit;color:inherit}
-#bgimg{position:fixed;inset:-30px;background-size:cover;background-position:center;z-index:-3}
+#bgimg{position:fixed;inset:0;background-size:cover;background-position:center;z-index:-3}
 #bgdim{position:fixed;inset:0;z-index:-2}
 .bg{position:fixed;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
-.bg i{position:absolute;width:440px;height:440px;border-radius:50%;filter:blur(90px);opacity:.25;background:var(--accent);animation:dr 16s ease-in-out infinite}
+.bg i{position:absolute;width:640px;height:640px;border-radius:50%;opacity:.4;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 60%,transparent),transparent 68%);will-change:transform;animation:dr 16s ease-in-out infinite}
 .bg i:nth-child(1){left:-100px;top:-120px}
-.bg i:nth-child(2){right:-100px;top:40%;background:color-mix(in srgb,var(--accent),#ff4d9d 60%);animation-delay:-6s}
+.bg i:nth-child(2){right:-100px;top:40%;background:radial-gradient(circle,color-mix(in srgb,color-mix(in srgb,var(--accent),#ff4d9d 60%) 60%,transparent),transparent 68%);animation-delay:-6s}
 .noanim .bg i{animation:none}.hasbg .bg{display:none}
 @keyframes dr{50%{transform:translate(50px,40px) scale(1.15)}}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
@@ -39,7 +39,7 @@ button,input,select{font:inherit;color:inherit}
 h1{font-size:1.8rem}h2{margin:26px 0 12px;font-size:1.05rem}
 .hero{font-size:clamp(2rem,6vw,3.4rem);letter-spacing:-.02em;text-shadow:none!important;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent),#ff4d9d 60%));-webkit-background-clip:text;background-clip:text;color:transparent}
 .mute{color:var(--mute)}
-.card,.panel{background:var(--card);border:var(--bw) solid var(--line);border-radius:var(--r);backdrop-filter:blur(var(--blur))}
+.card,.panel{background:var(--card);border:var(--bw) solid var(--line);border-radius:var(--r)}.panel{backdrop-filter:blur(var(--blur))}
 .in{width:100%;padding:.6em 1em;border-radius:var(--rs);border:var(--bw) solid var(--line);background:var(--card);outline:0}
 .in:focus{border-color:var(--accent)}
 .btn{border:var(--bw) solid var(--line);background:var(--card);border-radius:var(--rs);padding:.5em .9em;cursor:pointer;transition:.15s}
@@ -51,9 +51,9 @@ select.btn option{color:#111;background:#fff}
 #hq{max-width:560px;margin-top:14px}
 #chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw),1fr));gap:16px}
-.card{overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card{content-visibility:auto;contain-intrinsic-size:auto 250px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s}
 .card:hover,.card:focus-visible{transform:translateY(var(--hv));border-color:var(--accent);box-shadow:var(--hs);outline:0}
-.art{position:relative;aspect-ratio:16/10;display:grid;place-items:center;font-size:2.6rem;font-weight:800;color:#fff;text-shadow:none}
+.art{position:relative;aspect-ratio:var(--ar,16/10);display:grid;place-items:center;font-size:2.6rem;font-weight:800;color:#fff;text-shadow:none}
 .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .sv{position:absolute;top:8px;right:8px;padding:.2em .7em;border:0;border-radius:var(--rs);background:#000a;color:#fff;font-size:.75rem;cursor:pointer;text-shadow:none}
 .sv.on{background:var(--accent)}
@@ -85,6 +85,9 @@ input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--
 @media (max-width:640px){#nav button{min-width:0;flex:1}[data-nav=left] #nav button,[data-nav=right] #nav button{flex:none;min-width:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .srow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:var(--bw) solid var(--line)}
+.cv{top:auto;bottom:8px;display:none}.covmode .cv{display:block}.nopc .pc{display:none}
+body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{display:none}
+.perf *{transition:none!important;animation:none!important}.perf .bg{display:none}.perf .card:hover,.perf .card:focus-visible{transform:none;box-shadow:none}
 </style>
 </head>
 <body>
@@ -104,6 +107,7 @@ input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--
       <select class="btn" data-k="sort" title="Sort"><option value="az">A to Z</option><option value="za">Z to A</option><option value="recent">Recently played</option><option value="plays">Most played</option></select>
       <button class="btn" id="view">List view</button>
       <button class="btn" id="rand">Random</button>
+      <button class="btn" id="covedit">Edit covers</button>
     </div>
     <div id="chips"></div>
     <div class="cards" id="grid"></div>
@@ -135,6 +139,32 @@ input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--
         <div class="seg"><button class="btn" data-set="nav" data-v="bottom">Bottom</button><button class="btn" data-set="nav" data-v="left">Left</button><button class="btn" data-set="nav" data-v="right">Right</button></div>
         <div class="tg"><span>Show labels</span><input type="checkbox" data-k="labels"></div>
       </div>
+      <div class="panel"><h2>Tab disguise</h2>
+        <p class="mute">Changes the tab title and icon. It only changes how the tab looks.</p>
+        <div class="set"><label>Look like</label><select class="btn" data-k="cloak"><option value="none">Nothing (use portal name)</option><option value="docs">Google Docs</option><option value="slides">Google Slides</option><option value="sheets">Google Sheets</option><option value="drive">Google Drive</option><option value="classroom">Google Classroom</option><option value="schoology">Schoology</option><option value="khan">Khan Academy</option><option value="custom">Custom</option></select></div>
+        <div id="ccust" hidden>
+          <div class="set"><label>Custom title</label><input class="in" type="text" data-k="ctitle" maxlength="80"></div>
+          <div class="set"><label>Copy the icon from a site (example: khanacademy.org)</label><input class="in" type="text" data-k="cdom" maxlength="60"></div>
+          <div class="set seg"><button class="btn" id="cbtn">Upload icon</button><button class="btn" id="cclr">Remove uploaded icon</button></div>
+        </div>
+      </div>
+      <div class="panel"><h2>More options</h2>
+        <div class="set"><label>Performance mode</label><select class="btn" data-k="perf"><option value="auto">Automatic</option><option value="on">On (fewer effects, faster)</option><option value="off">Off (all effects)</option></select></div>
+        <div class="set"><label>Start page</label><select class="btn" data-k="start"><option value="home">Home</option><option value="games">Games</option><option value="tools">Tools</option></select></div>
+        <div class="set"><label>Card shape</label><select class="btn" data-k="shape"><option value="wide">Wide</option><option value="square">Square</option><option value="tall">Tall</option></select></div>
+        <div class="set"><label>Text size</label><input type="range" data-k="fs" min="85" max="130" step="5"></div>
+        <div class="tg"><span>Show play counts</span><input type="checkbox" data-k="plays"></div>
+        <div class="tg"><span>Show clock on Home</span><input type="checkbox" data-k="clock"></div>
+        <div class="tg"><span>Open games in fullscreen</span><input type="checkbox" data-k="gfs"></div>
+        <div class="tg"><span>Ask before closing this tab</span><input type="checkbox" data-k="warn"></div>
+      </div>
+      <div class="panel"><h2>Covers and GitHub</h2>
+        <p class="mute">Turn on Edit covers in the Games or Tools page, then press Cover on a card. To also save covers into your GitHub repo, paste a fine-grained token limited to this one repo with Contents: Read and write.</p>
+        <p class="mute" id="cstat"></p>
+        <div class="set"><label>GitHub token</label><input class="in" type="password" id="gtok" autocomplete="off"></div>
+        <div class="tg"><span>Remember token on this device</span><input type="checkbox" data-k="remember"></div>
+        <div class="set seg"><button class="btn" id="gtest">Test token</button><button class="btn" id="ccl">Clear local covers</button></div>
+      </div>
       <div class="panel"><h2>Library</h2>
         <p class="mute" id="lstat">Loading...</p>
         <div class="set seg"><button class="btn" id="lscan">Rescan folders</button></div>
@@ -162,99 +192,206 @@ input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--
 <section id="player" hidden>
   <div id="bar"><button class="btn" id="back">Back</button><b id="ptitle"></b><button class="btn" id="pfav">Save</button><button class="btn" id="reload">Restart</button><button class="btn" id="full">Fullscreen</button></div>
   <div id="msg"></div>
-  <iframe id="frame" title="Content" allow="fullscreen; autoplay; gamepad"></iframe>
+  <iframe id="frame" title="Content" allow="fullscreen; autoplay; gamepad; accelerometer; gyroscope; clipboard-write; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-orientation-lock allow-presentation"></iframe>
 </section>
+<input type="file" id="covfile" accept="image/*" hidden><input type="file" id="cfile" accept="image/*" hidden>
 <div id="toast"></div>
 <script>
 (()=>{
 const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ROOT=new URL('.',document.baseURI).href; /* the folder hub.html lives in (works when launched or opened directly) */
+const RM=ROOT.match(/\/gh\/([^/@]+)\/([^/@]+)(?:@([^/]+))?\/(.*)$/),RI=RM?{user:RM[1],repo:RM[2],ver:RM[3]||'',sub:RM[4]}:null;
 const mem={},store={
   get(k,d){try{const v=localStorage.getItem(k);if(v!==null)return JSON.parse(v)}catch(e){}return k in mem?mem[k]:d},
   set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-const T={night:['Night','#090a1c','#eaf0ff','#7b5cff'],light:['Light','#eef0fa','#1a1c33','#5b4bff'],dusk:['Dusk','#1c0f26','#fbe9ff','#e05bff'],forest:['Forest','#08170f','#e6fff1','#2fd07a'],ocean:['Ocean','#06202e','#e3f6ff','#1ec8ff'],sunset:['Sunset','#241012','#ffeede','#ff7a3d'],rose:['Rose','#fff1f4','#3a1421','#e5426f'],graphite:['Graphite','#141414','#eeeeee','#9aa0a6'],transparent:['Transparent','#05060f','#ffffff','#7b5cff'],custom:['Custom','#101820','#f2f2f2','#7b5cff']};
+const tmo=ms=>{const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal};
+const T={night:['Night','#090a1c','#eaf0ff','#7b5cff'],light:['Light','#eef0fa','#1a1c33','#5b4bff'],dusk:['Dusk','#1c0f26','#fbe9ff','#e05bff'],forest:['Forest','#08170f','#e6fff1','#2fd07a'],ocean:['Ocean','#06202e','#e3f6ff','#1ec8ff'],sunset:['Sunset','#241012','#ffeede','#ff7a3d'],rose:['Rose','#fff1f4','#3a1421','#e5426f'],graphite:['Graphite','#141414','#eeeeee','#9aa0a6'],mint:['Mint','#eafaf1','#12332a','#14a37f'],lavender:['Lavender','#f2eefc','#2a2144','#8a63f2'],coffee:['Coffee','#1f1712','#f3e6d8','#c58a4b'],crimson:['Crimson','#14080a','#ffe9ec','#e0243c'],transparent:['Transparent','#05060f','#ffffff','#7b5cff'],custom:['Custom','#101820','#f2f2f2','#7b5cff']};
+/* [label, tab title, site the icon is copied from, fallback icon color] */
+const CLOAK={docs:['Google Docs','Untitled document - Google Docs','docs.google.com','#4285f4'],slides:['Google Slides','Untitled presentation - Google Slides','slides.google.com','#f4b400'],sheets:['Google Sheets','Untitled spreadsheet - Google Sheets','sheets.google.com','#0f9d58'],drive:['Google Drive','My Drive - Google Drive','drive.google.com','#1a73e8'],classroom:['Google Classroom','Classroom','classroom.google.com','#0f9d58'],schoology:['Schoology','Home | Schoology','app.schoology.com','#0077c8'],khan:['Khan Academy','Khan Academy | Free Online Courses, Lessons & Practice','www.khanacademy.org','#14bf96']};
 const GLOW='0 16px 40px color-mix(in srgb,var(--accent),transparent 70%)';
-const UI={modern:{n:'Modern',r:16,bw:1,bl:0,f:'sans',hs:GLOW,hv:-5},minimal:{n:'Minimal',r:6,bw:1,bl:0,f:'sans',hs:'none',hv:-2},glass:{n:'Glass',r:24,bw:1,bl:22,f:'sans',hs:GLOW,hv:-5},bold:{n:'Bold',r:10,bw:3,bl:0,f:'sans',hs:'6px 6px 0 var(--accent)',hv:-4},terminal:{n:'Terminal',r:0,bw:2,bl:0,f:'mono',hs:'4px 4px 0 var(--accent)',hv:0}};
+const UI={modern:{n:'Modern',r:16,bw:1,bl:0,f:'sans',hs:GLOW,hv:-5},minimal:{n:'Minimal',r:6,bw:1,bl:0,f:'sans',hs:'none',hv:-2},glass:{n:'Glass',r:24,bw:1,bl:22,f:'sans',hs:GLOW,hv:-5},aqua:{n:'Aqua',r:30,bw:1,bl:16,f:'sans',hs:GLOW,hv:-6},soft:{n:'Soft',r:28,bw:0,bl:0,f:'sans',hs:'0 14px 30px #0005',hv:-4},neon:{n:'Neon',r:12,bw:1,bl:0,f:'sans',hs:'0 0 0 1px var(--accent),0 0 26px color-mix(in srgb,var(--accent) 70%,transparent)',hv:-4},paper:{n:'Paper',r:4,bw:1,bl:0,f:'serif',hs:'0 5px 0 var(--line)',hv:-3},bold:{n:'Bold',r:10,bw:3,bl:0,f:'sans',hs:'6px 6px 0 var(--accent)',hv:-4},retro:{n:'Retro',r:0,bw:3,bl:0,f:'mono',hs:'8px 8px 0 var(--accent)',hv:-4},terminal:{n:'Terminal',r:0,bw:2,bl:0,f:'mono',hs:'4px 4px 0 var(--accent)',hv:0}};
 const FONT={sans:'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',serif:'Georgia,"Times New Roman",serif',mono:'ui-monospace,Consolas,"Courier New",monospace'};
-const DEF={name:'Game Portal',theme:'night',cbg:'#101820',ctext:'#f2f2f2',accent:'',ui:'modern',font:'auto',radius:null,size:210,anim:true,desc:true,nav:'bottom',labels:true,clock24:false,view:'grid',sort:'az',dim:35,blur:0};
-let cfg=Object.assign({},DEF,store.get('gp_cfg',{})),D=Object.assign({fav:{},plays:{},last:{}},store.get('gp_data',{})),bg=store.get('gp_bg','');
-let lib={games:[],tools:[]},pg='home',kind='games',tag='all',cur=null,ready=false,notes=[],cap=240,tt;
-const saveC=()=>store.set('gp_cfg',cfg),saveD=()=>store.set('gp_data',D);
-const key=g=>g.kind+':'+g.id,all=()=>[...lib.games.map(g=>({...g,kind:'games'})),...lib.tools.map(g=>({...g,kind:'tools'}))];
-/* ---- Game saves: each game gets its own private slot inside browser storage ---- */
+const DEF={name:'Game Portal',theme:'night',cbg:'#101820',ctext:'#f2f2f2',accent:'',ui:'modern',font:'auto',radius:null,size:210,anim:false,desc:true,nav:'bottom',labels:true,clock24:false,view:'grid',sort:'az',dim:35,blur:0,perf:'auto',start:'home',shape:'wide',fs:100,plays:true,clock:true,gfs:false,warn:false,cloak:'none',ctitle:'',cdom:'',cimg:'',remember:false};
+let cfg=Object.assign({},DEF,store.get('gp_cfg',{})),D=Object.assign({fav:{},plays:{},last:{}},store.get('gp_data',{})),bg=store.get('gp_bg',''),covers=store.get('gp_cov',{}),token=store.get('gp_tok','');
+let lib={games:[],tools:[]},ALL=[],MAP=new Map(),lastMan={games:[],tools:[]},pg='home',kind='games',tag='all',cur=null,ready=false,notes=[],cap=96,tt,sct,aq,bt,ck='',frameUrl='',covKey='',covMode=false;
+const col=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
+const saveC=()=>{clearTimeout(sct);sct=setTimeout(()=>store.set('gp_cfg',cfg),250)},saveD=()=>store.set('gp_data',D);
+const hue=s=>[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7);
+function toast(m,ms){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),ms||2200)}
+
+/* ---- Game saves: every game gets a private slot. Reads come from memory, writes are batched. ---- */
 const SP='gpsave:';
 const storageOK=(()=>{try{localStorage.setItem('gp_t','1');localStorage.removeItem('gp_t');return true}catch(e){return false}})();
-const sv={mem:{},
-  raw(n){try{if(storageOK){const v=localStorage.getItem(n);if(v!==null)return v}}catch(e){}return n in sv.mem?sv.mem[n]:null},
-  names(p){const s=new Set(Object.keys(sv.mem).filter(n=>n.startsWith(p)));try{if(storageOK)for(let i=0;i<localStorage.length;i++){const n=localStorage.key(i);if(n&&n.startsWith(p))s.add(n)}}catch(e){}return[...s]},
-  get:(g,k)=>sv.raw(SP+g+'|'+k),
-  set(g,k,v){const n=SP+g+'|'+k;sv.mem[n]=v;try{if(storageOK)localStorage.setItem(n,v)}catch(e){toast('Browser storage is full. This save lasts only until you close the tab.')}},
-  del(g,k){const n=SP+g+'|'+k;delete sv.mem[n];try{if(storageOK)localStorage.removeItem(n)}catch(e){}},
-  keys:g=>sv.names(SP+g+'|').map(n=>n.slice((SP+g+'|').length)),
-  clear(g){sv.names(SP+g+'|').forEach(n=>{delete sv.mem[n];try{if(storageOK)localStorage.removeItem(n)}catch(e){}})}
+const M={},Q=new Map();let ft=0;
+const sv={
+  load(g){if(M[g])return M[g];const o=M[g]={},p=SP+g+'|';try{if(storageOK)for(let i=0;i<localStorage.length;i++){const n=localStorage.key(i);if(n&&n.startsWith(p)&&!Q.has(n))o[n.slice(p.length)]=localStorage.getItem(n)}}catch(e){}return o},
+  q(n,v){Q.set(n,v);clearTimeout(ft);ft=setTimeout(sv.flush,400)},
+  flush(){clearTimeout(ft);if(!Q.size)return;const it=[...Q];Q.clear();if(!storageOK)return;for(const [n,v] of it){try{v===null?localStorage.removeItem(n):localStorage.setItem(n,v)}catch(e){toast('Browser storage is full. Some saves may not stick.');break}}},
+  get(g,k){const v=sv.load(g)[k];return v===undefined?null:v},
+  set(g,k,v){sv.load(g)[k]=v;sv.q(SP+g+'|'+k,v)},
+  del(g,k){delete sv.load(g)[k];sv.q(SP+g+'|'+k,null)},
+  keys:g=>Object.keys(sv.load(g)),
+  clear(g){const o=sv.load(g);for(const k in o)sv.q(SP+g+'|'+k,null);M[g]={};sv.flush()}
 };
 window.__gp=sv;
-/* This function's source is copied into every game, so it runs before the game's own code.
-   It swaps the game's localStorage for the hub's per-game storage. */
-function shim(G){
+function allSaves(){
+  sv.flush();const o={};
+  try{if(storageOK)for(let i=0;i<localStorage.length;i++){const n=localStorage.key(i);if(n&&n.startsWith(SP)){const r=n.slice(SP.length),j=r.indexOf('|');if(j>0)(o[r.slice(0,j)]=o[r.slice(0,j)]||{})[r.slice(j+1)]=localStorage.getItem(n)}}}catch(e){}
+  for(const g in M)if(Object.keys(M[g]).length)o[g]=Object.assign(o[g]||{},M[g]);
+  return o;
+}
+/* This function's source is copied into every game and runs before the game's own code.
+   1) per-game localStorage  2) root-relative fetch/XHR paths  3) history calls that fail inside blob pages */
+function shim(G,B){
   try{
-    var P=window.parent.__gp;if(!P)return;
-    var api={
-      getItem:function(k){return P.get(G,String(k))},
-      setItem:function(k,v){P.set(G,String(k),String(v))},
-      removeItem:function(k){P.del(G,String(k))},
-      clear:function(){P.clear(G)},
-      key:function(i){var a=P.keys(G);return i<a.length?a[i]:null}
-    };
-    var S=new Proxy(api,{
-      get:function(t,p){
-        if(p==='length')return P.keys(G).length;
-        if(p in t)return t[p];
-        if(typeof p==='string'){var v=P.get(G,p);return v===null?undefined:v}
-      },
-      set:function(t,p,v){P.set(G,String(p),String(v));return true},
-      deleteProperty:function(t,p){P.del(G,String(p));return true},
-      has:function(t,p){return p in t||(typeof p==='string'&&P.get(G,p)!==null)},
-      ownKeys:function(){return P.keys(G)},
-      getOwnPropertyDescriptor:function(t,p){var v=typeof p==='string'?P.get(G,p):null;return v===null?undefined:{value:v,enumerable:true,configurable:true,writable:true}}
-    });
-    Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return S}});
+    var P=window.parent.__gp;
+    if(P){
+      var api={
+        getItem:function(k){return P.get(G,String(k))},
+        setItem:function(k,v){P.set(G,String(k),String(v))},
+        removeItem:function(k){P.del(G,String(k))},
+        clear:function(){P.clear(G)},
+        key:function(i){var a=P.keys(G);return i<a.length?a[i]:null}
+      };
+      var S=new Proxy(api,{
+        get:function(t,p){
+          if(p==='length')return P.keys(G).length;
+          if(p in t)return t[p];
+          if(typeof p==='string'){var v=P.get(G,p);return v===null?undefined:v}
+        },
+        set:function(t,p,v){P.set(G,String(p),String(v));return true},
+        deleteProperty:function(t,p){P.del(G,String(p));return true},
+        has:function(t,p){return p in t||(typeof p==='string'&&P.get(G,p)!==null)},
+        ownKeys:function(){return P.keys(G)},
+        getOwnPropertyDescriptor:function(t,p){var v=typeof p==='string'?P.get(G,p):null;return v===null?undefined:{value:v,enumerable:true,configurable:true,writable:true}}
+      });
+      Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return S}});
+    }
+  }catch(e){}
+  try{
+    var rel=function(u){return typeof u==='string'&&/^\/(?!\/)/.test(u)?B+u.slice(1):u};
+    var fx=window.fetch;
+    if(fx)window.fetch=function(u,o){return fx.call(this,rel(u),o)};
+    var xo=XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open=function(m,u){var a=Array.prototype.slice.call(arguments);a[1]=rel(u);return xo.apply(this,a)};
+    ['pushState','replaceState'].forEach(function(m){var o=history[m];history[m]=function(){try{return o.apply(this,arguments)}catch(e){}}});
   }catch(e){}
 }
 function renderSaves(){
   $('sstat').textContent=storageOK?'Browser storage is working. Game saves stay on this device until you clear your browser data.':'Browser storage is blocked here, so saves last only until you close this tab. Export a backup before you leave.';
-  const m={};
-  sv.names(SP).forEach(n=>{const g=n.slice(SP.length).split('|')[0];(m[g]=m[g]||{n:0,b:0}).n++;m[g].b+=n.length+(sv.raw(n)||'').length});
-  const ks=Object.keys(m);
-  $('saves').innerHTML=ks.length?ks.map(g=>`<div class="srow"><span>${esc((all().find(x=>key(x)===g)||{}).title||g)} <small class="mute">${m[g].n} items, ${Math.max(1,Math.round(m[g].b/1024))} KB</small></span><button class="btn" data-clr="${esc(g)}">Clear</button></div>`).join(''):'<p class="mute">No saved game data yet. Games that use localStorage save here automatically.</p>';
+  const o=allSaves(),ks=Object.keys(o).filter(g=>Object.keys(o[g]).length);
+  $('saves').innerHTML=ks.length?ks.map(g=>{const e=Object.entries(o[g]),b=e.reduce((a,[k,v])=>a+k.length+String(v).length,0);return `<div class="srow"><span>${esc((MAP.get(g)||{}).title||g)} <small class="mute">${e.length} items, ${Math.max(1,Math.round(b/1024))} KB</small></span><button class="btn" data-clr="${esc(g)}">Clear</button></div>`}).join(''):'<p class="mute">No saved game data yet. Games that use localStorage save here automatically.</p>';
 }
 function exportAll(){
-  const o={v:1,saves:{},hub:{data:D}};sv.names(SP).forEach(n=>o.saves[n]=sv.raw(n));
+  const o={v:1,saves:{},hub:{data:D,cfg}},s=allSaves();
+  for(const g in s)for(const k in s[g])o.saves[SP+g+'|'+k]=s[g][k];
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));
   a.download='portal-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Backup downloaded');
 }
+
+/* ---- Network: mirrors ---- */
 const HOSTS=['cdn.jsdelivr.net','fastly.jsdelivr.net','gcore.jsdelivr.net','testingcf.jsdelivr.net','quantil.jsdelivr.net','originfastly.jsdelivr.net'];
-async function fetchMirror(href,opt){ /* retries other jsDelivr hosts if this one is unreachable */
+async function fetchMirror(href,opt){ /* small files: tries the next jsDelivr host if one is unreachable or slow */
   const u=new URL(href),list=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])];let err;
-  for(const x of list){try{u.hostname=x;const r=await fetch(u.href,opt);if(r.ok||r.status<500)return r;err=Error('HTTP '+r.status)}catch(e){err=e}}
+  for(const x of list){
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),8000);
+    try{u.hostname=x;const r=await fetch(u.href,{...opt,signal:c.signal});if(r.ok||r.status<500)return r;err=Error('HTTP '+r.status)}catch(e){err=e}finally{clearTimeout(t)}
+  }
   throw err;
 }
-function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)}
-function colors(){const c=cfg.theme==='custom'?['',cfg.cbg,cfg.ctext,T.custom[3]]:(T[cfg.theme]||T.night);return{bg:c[1],text:c[2],accent:c[3]}}
+function race(url){ /* games: start on the main host, add a backup host every 1.8 s (or at once on failure), first answer wins */
+  const u=new URL(url),hs=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])].slice(0,4),cs=[];
+  return new Promise((res,rej)=>{
+    let done=false,fails=0,last,started=0;
+    const begin=i=>{
+      if(done||i>=hs.length||started>i)return;started=i+1;
+      const c=new AbortController(),to=setTimeout(()=>c.abort(),25000),v=new URL(url);cs.push(c);v.hostname=hs[i];
+      setTimeout(()=>begin(i+1),1800);
+      fetch(v.href,{signal:c.signal}).then(r=>{
+        clearTimeout(to);if(done)return;
+        if(r.ok){done=true;cs.forEach(x=>x!==c&&x.abort());res(r)}else throw Error('HTTP '+r.status+' loading '+v.href+' (check that the file exists and the repo is public)');
+      }).catch(e=>{clearTimeout(to);if(done)return;last=e;if(++fails>=hs.length)rej(last);else begin(i+1)});
+    };
+    begin(0);
+  });
+}
+async function readAll(r,onP){
+  if(!r.body||!r.body.getReader){const b=new Uint8Array(await r.arrayBuffer());onP&&onP(b.length);return b}
+  const rd=r.body.getReader(),ch=[];let n=0;
+  for(;;){const {done,value}=await rd.read();if(done)break;ch.push(value);n+=value.length;onP&&onP(n)}
+  const out=new Uint8Array(n);let o=0;for(const c of ch){out.set(c,o);o+=c.length}return out;
+}
+const GC=new Map(),CN='gp-games-v1',reval=new Set();
+async function cget(u){try{const r=await caches.match(u,{cacheName:CN});if(r)return new Uint8Array(await r.arrayBuffer())}catch(e){}return null}
+async function cput(u,b){try{const c=await caches.open(CN);await c.put(u,new Response(b))}catch(e){}}
+function getGame(url,onP){ /* memory cache -> Cache Storage (opens instantly, refreshed in background) -> network race */
+  let p=GC.get(url);if(p)return p;
+  p=(async()=>{
+    const c=await cget(url);
+    if(c){if(!reval.has(url)){reval.add(url);setTimeout(()=>race(url).then(r=>readAll(r)).then(b=>cput(url,b)).catch(()=>{}),5000)}return{buf:c,url}}
+    const r=await race(url),buf=await readAll(r,onP);cput(url,buf);return{buf,url:r.url||url};
+  })();
+  GC.set(url,p);p.catch(()=>GC.delete(url));
+  if(GC.size>4)GC.delete(GC.keys().next().value);
+  return p;
+}
+const tagFor=(base,gk)=>'<base href="'+base+'"><script>('+shim.toString()+')('+JSON.stringify(gk).replace(/</g,'\\u003c')+','+JSON.stringify(base).replace(/</g,'\\u003c')+')<\/script>';
+function spot(s){
+  let m=/<head[^>]*>/i.exec(s);if(m)return[m.index+m[0].length,'',''];
+  m=/<html[^>]*>/i.exec(s);if(m)return[m.index+m[0].length,'<head>','</head>'];
+  m=/<!doctype[^>]*>/i.exec(s);return[m?m.index+m[0].length:0,'',''];
+}
+function prep(buf,base,gk){ /* builds the page as a Blob: no giant strings for big games */
+  const tag=tagFor(base,gk);
+  if(buf.length<3e6){
+    let s=new TextDecoder().decode(buf);
+    s=s.replace(/(\s(?:src|href|poster|action|data-src)\s*=\s*["'])\/(?!\/)/gi,(m,a)=>a+base).replace(/url\(\s*(["']?)\/(?!\/)/gi,(m,a)=>'url('+a+base);
+    const [i,a,b]=spot(s);
+    return new Blob([s.slice(0,i),a,tag,b,s.slice(i)],{type:'text/html;charset=utf-8'});
+  }
+  const [i,a,b]=spot(new TextDecoder('latin1').decode(buf.subarray(0,65536)));
+  return new Blob([buf.subarray(0,i),a,tag,b,buf.subarray(i)],{type:'text/html;charset=utf-8'});
+}
 
+/* ---- Look & feel ---- */
+function colors(){const c=cfg.theme==='custom'?['',cfg.cbg,cfg.ctext,T.custom[3]]:(T[cfg.theme]||T.night);return{bg:c[1],text:c[2],accent:c[3]}}
+function setIcon(href){document.querySelectorAll('link[rel~=icon]').forEach(l=>l.remove());const l=document.createElement('link');l.rel='icon';l.href=href;document.head.appendChild(l)}
+function letterIcon(ch,c){const k=document.createElement('canvas');k.width=k.height=64;const x=k.getContext('2d');x.fillStyle=c;x.beginPath();x.roundRect?x.roundRect(0,0,64,64,14):x.rect(0,0,64,64);x.fill();x.fillStyle='#fff';x.font='bold 40px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(ch,32,36);return k.toDataURL()}
+function applyCloak(){
+  const c=CLOAK[cfg.cloak],cu=cfg.cloak==='custom',title=c?c[1]:cu&&cfg.ctitle?cfg.ctitle:(cfg.name||DEF.name);
+  document.title=title;
+  const sig=[cfg.cloak,cfg.cdom,cfg.cimg.length,cfg.ctitle,cfg.name,cfg.accent,cfg.theme].join('|');if(sig===ck)return;ck=sig;
+  setIcon(letterIcon(title[0].toUpperCase(),c?c[3]:cfg.accent||colors().accent));
+  if(cu&&cfg.cimg)return setIcon(cfg.cimg);
+  const dom=c?c[2]:cu?cfg.cdom:'';
+  if(dom){const href='https://www.google.com/s2/favicons?domain='+encodeURIComponent(dom)+'&sz=64',im=new Image();im.onload=()=>{if(ck===sig)setIcon(href)};im.src=href}
+}
+function setBg(){
+  const el=$('bgimg');
+  if(!bg){el.style.backgroundImage='none';return}
+  if(!cfg.blur){el.style.backgroundImage=`url(${bg})`;return}
+  clearTimeout(bt);bt=setTimeout(()=>{ /* blur once on a small copy instead of live on a full-screen layer */
+    const im=new Image();im.onload=()=>{const w=480,h=Math.round(w*im.height/im.width),k=document.createElement('canvas');k.width=w;k.height=h;const x=k.getContext('2d');x.filter='blur('+Math.max(1,cfg.blur/4)+'px)';x.drawImage(im,-20,-20,w+40,h+40);el.style.backgroundImage=`url(${k.toDataURL('image/jpeg',.7)})`};im.src=bg;
+  },200);
+}
+const weak=(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4;
 function apply(){
   const c=colors(),U=UI[cfg.ui]||UI.modern,h=document.documentElement,s=h.style,b=document.body,r=cfg.radius==null?U.r:cfg.radius;
+  const perf=cfg.perf==='on'||(cfg.perf==='auto'&&weak);
   s.setProperty('--bg',c.bg);s.setProperty('--text',c.text);s.setProperty('--accent',cfg.accent||c.accent);
-  s.setProperty('--r',r+'px');s.setProperty('--rs',Math.round(r*.6)+'px');s.setProperty('--bw',U.bw+'px');s.setProperty('--blur',U.bl+'px');
+  s.setProperty('--r',r+'px');s.setProperty('--rs',Math.round(r*.6)+'px');s.setProperty('--bw',U.bw+'px');s.setProperty('--blur',(perf?0:U.bl)+'px');
   s.setProperty('--hs',U.hs);s.setProperty('--hv',U.hv+'px');s.setProperty('--cw',cfg.size+'px');
+  s.setProperty('--ar',{wide:'16/10',square:'1/1',tall:'3/4'}[cfg.shape]||'16/10');
   s.setProperty('--font',FONT[cfg.font==='auto'?U.f:cfg.font]||FONT.sans);
   h.classList.toggle('tr',cfg.theme==='transparent');
-  $('app').dataset.nav=cfg.nav;
-  b.classList.toggle('nolabels',!cfg.labels);b.classList.toggle('noanim',!cfg.anim);b.classList.toggle('nodesc',!cfg.desc);b.classList.toggle('list',cfg.view==='list');b.classList.toggle('hasbg',!!bg);
-  $('bgimg').style.backgroundImage=bg?`url(${bg})`:'none';$('bgimg').style.filter=`blur(${cfg.blur}px)`;
-  $('bgdim').style.background=bg?`rgba(0,0,0,${cfg.dim/100})`:'none';
-  document.title=$('hname').textContent=cfg.name||DEF.name;$('view').textContent=cfg.view==='list'?'Grid view':'List view';
+  $('app').dataset.nav=cfg.nav;b.style.fontSize=(15*cfg.fs/100)+'px';
+  b.classList.toggle('nolabels',!cfg.labels);b.classList.toggle('noanim',!cfg.anim);b.classList.toggle('nodesc',!cfg.desc);b.classList.toggle('list',cfg.view==='list');
+  b.classList.toggle('hasbg',!!bg);b.classList.toggle('perf',perf);b.classList.toggle('nopc',!cfg.plays);b.classList.toggle('covmode',covMode);
+  $('bgdim').style.background=bg?`rgba(0,0,0,${cfg.dim/100})`:'none';setBg();
+  $('hname').textContent=cfg.name||DEF.name;$('clock').hidden=!cfg.clock;$('view').textContent=cfg.view==='list'?'Grid view':'List view';
+  applyCloak();
 }
+const qa=()=>{cancelAnimationFrame(aq);aq=requestAnimationFrame(apply)};
 function sync(){
   const c=colors();
   document.querySelectorAll('[data-k]').forEach(el=>{
@@ -264,13 +401,9 @@ function sync(){
     if(el.type==='checkbox')el.checked=!!v;else el.value=v;
   });
   document.querySelectorAll('[data-set]').forEach(b=>b.classList.toggle('on',cfg[b.dataset.set]===b.dataset.v));
-  $('cust').hidden=cfg.theme!=='custom';
+  $('cust').hidden=cfg.theme!=='custom';$('ccust').hidden=cfg.cloak!=='custom';$('gtok').value=token;
 }
-const hue=s=>[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7);
-function card(g){
-  const k=key(g),h=hue(k),p=D.plays[k]||0,f=D.fav[k];
-  return `<article class="card" tabindex="0" data-key="${esc(k)}"><div class="art" style="background:linear-gradient(135deg,hsl(${h} 65% 46%),hsl(${(h+55)%360} 65% 30%))">${g.thumb?`<img src="${esc(g.thumb)}" alt="" loading="lazy">`:esc(g.title[0].toUpperCase())}<button class="sv ${f?'on':''}" data-fav="${esc(k)}">${f?'Saved':'Save'}</button></div><div class="info"><h3>${esc(g.title)}</h3><p>${esc(g.desc||'')}</p><small>${esc((g.tags||[]).join(', '))}${p?' | played '+p+'x':''}</small></div></article>`;
-}
+
 /* ---- Library: auto-detects everything in the games/ and tools/ folders; library.json is optional ---- */
 const EXT=['png','jpg','jpeg','webp','gif','svg'];
 const enc=p=>p.split('/').map(encodeURIComponent).join('/');
@@ -278,18 +411,20 @@ const nrm=f=>{f=String(f).replace(/^\.?\//,'');try{return decodeURIComponent(f)}
 const pretty=s=>s.replace(/[-_.]+/g,' ').replace(/\s+/g,' ').trim().replace(/\b[a-z]/g,c=>c.toUpperCase());
 const flat=(fs,pre='')=>(fs||[]).flatMap(f=>f.type==='directory'?flat(f.files,pre+f.name+'/'):[f.name.startsWith('/')?f.name.slice(1):pre+f.name]);
 async function scan(force){
-  const M=ROOT.match(/\/gh\/([^/@]+)\/([^/@]+)(?:@([^/]+))?\/(.*)$/);
-  if(!M)throw Error('this page was not loaded from a jsDelivr GitHub link');
-  const [,user,repo,ver,sub]=M,tk=user+'/'+repo+'@'+ver+'/'+sub,c=store.get('gp_scan',null);
-  if(!force&&c&&c.k===tk&&Date.now()-c.t<6e5)return c.p;
+  if(!RI)throw Error('this page was not loaded from a jsDelivr GitHub link');
+  const {user,repo,ver,sub}=RI,tk=user+'/'+repo+'@'+ver+'/'+sub,c=store.get('gp_scan',null);
+  if(!force&&c&&c.k===tk){ /* show the saved list at once, refresh it quietly if it is getting old */
+    if(Date.now()-c.t>3e5)setTimeout(()=>scan(true).then(p=>{if(p.join()!==c.p.join())rebuild(p)}).catch(()=>{}),3000);
+    return c.p;
+  }
   let files;
   try{
-    const r=await fetch('https://data.jsdelivr.com/v1/packages/gh/'+user+'/'+repo+(ver?'@'+ver:'')+'?structure=flat',{cache:'no-cache'});
+    const r=await fetch('https://data.jsdelivr.com/v1/packages/gh/'+user+'/'+repo+(ver?'@'+ver:'')+'?structure=flat',{cache:'no-cache',signal:tmo(10000)});
     if(!r.ok)throw Error('jsDelivr file list HTTP '+r.status+(r.status===403?' (repo over 50 MB?)':''));
     files=flat((await r.json()).files);
   }catch(e1){
     try{
-      const r=await fetch('https://api.github.com/repos/'+user+'/'+repo+'/git/trees/'+(ver||'HEAD')+'?recursive=1');
+      const r=await fetch('https://api.github.com/repos/'+user+'/'+repo+'/git/trees/'+(ver||'HEAD')+'?recursive=1',{signal:tmo(10000)});
       if(!r.ok)throw Error('GitHub HTTP '+r.status);
       files=(await r.json()).tree.filter(t=>t.type==='blob').map(t=>t.path);
     }catch(e2){if(c&&c.k===tk)return c.p;throw Error(e1.message+' / '+e2.message)}
@@ -307,10 +442,10 @@ function build(paths,man){
       for(let i=2;i<=parts.length&&!dir;i++){const d=parts.slice(0,i).join('/')+'/';if(gd.has(d))dir=d}
       if(dir?(p!==dir+name||!isIdx(name)):(parts.length===1&&isIdx(name)))continue; /* folder-games count once, via index.html */
       let base,tags,td,names;
-      if(dir){tags=dir.slice(0,-1).split('/').slice(1);base=tags.pop();td=dir;names=['thumb','thumbnail','cover','icon','preview',base]}
+      if(dir){tags=dir.slice(0,-1).split('/').slice(1);base=tags.pop();td=dir;names=['cover','thumb','thumbnail','icon','preview',base]}
       else{tags=parts.slice(1);base=name.replace(/\.html?$/i,'');td=parts.join('/')+'/';names=[base]}
       let th='';for(const n of names)for(const e of EXT)if(!th&&set.has(td+n+'.'+e))th=td+n+'.'+e;
-      auto.push({id:dir?dir.slice(k.length+1,-1):p.slice(k.length+1).replace(/\.html?$/i,''),title:pretty(base),file:enc(p),tags,thumb:th?enc(th):undefined,_k:p});
+      auto.push({id:dir?dir.slice(k.length+1,-1):p.slice(k.length+1).replace(/\.html?$/i,''),title:pretty(base),file:enc(p),tags,thumb:th?enc(th):undefined,_k:p,_cov:th||(dir?dir+'cover.jpg':td+base+'.jpg')});
     }
     const idx=new Map(auto.map(a=>[a._k,a]));
     for(const m of man[k]||[]){
@@ -323,8 +458,17 @@ function build(paths,man){
   }
   return out;
 }
+function decorate(){
+  for(const k of ['games','tools']){
+    for(const g of lib[k]){g.kind=k;g._key=k+':'+g.id;g._hay=(g.title+' '+(g.desc||'')+' '+(g.tags||[]).join(' ')).toLowerCase();g._h=hue(g._key)}
+    lib[k].sort((a,b)=>col.compare(a.title,b.title));
+  }
+  ALL=[...lib.games,...lib.tools];MAP=new Map(ALL.map(g=>[g._key,g]));
+}
+function rebuild(p){lib=build(p,lastMan);decorate();if($('player').hidden)refresh()}
 async function loadLib(force){
-  notes=[];const man={games:[],tools:[]};let auto=true,paths=[],miss='';
+  notes=[];const man={games:[],tools:[]},sn=[];let auto=true,miss='';
+  const sp=scan(force).catch(e=>{sn.push('auto-detect failed: '+e.message);return[]}); /* runs while library.json downloads */
   try{
     const r=await fetchMirror(new URL('library.json',ROOT).href,{cache:'no-cache'});
     if(r.ok){
@@ -333,84 +477,126 @@ async function loadLib(force){
     }else if(r.status===404)miss=r.url;
     else notes.push('library.json returned HTTP '+r.status+' at '+r.url);
   }catch(e){notes.push('could not fetch library.json ('+e.message+')')}
-  if(auto){try{paths=await scan(force)}catch(e){notes.push('auto-detect failed: '+e.message)}}
-  lib=build(paths,man);
-  if(miss&&!lib.games.length&&!lib.tools.length)notes.unshift('library.json was not found at '+miss);
+  const paths=auto?await sp:[];if(auto)notes.push(...sn);
+  lastMan=man;lib=build(paths,man);decorate();
+  if(miss&&!ALL.length)notes.unshift('library.json was not found at '+miss);
 }
 function libStatus(){
-  const g=lib.games.length,t=lib.tools.length,a=[...lib.games,...lib.tools].filter(x=>x._k).length;
+  const g=lib.games.length,t=lib.tools.length,a=ALL.filter(x=>x._k).length;
   $('lstat').textContent=`Found ${g} games and ${t} tools (${a} auto-detected from the folders, ${g+t-a} from library.json). `+(notes.length?'Notes: '+notes.join('. ')+'.':'');
 }
-const match=(g,q)=>`${g.title} ${g.desc||''} ${(g.tags||[]).join(' ')}`.toLowerCase().includes(q);
+function covStatus(){$('cstat').textContent=(RI?`Repo: ${RI.user}/${RI.repo}${RI.ver?'@'+RI.ver:''}. `:'Not loaded from a jsDelivr GitHub link, so GitHub upload is unavailable. ')+(token?'Token is set.':'No token, so covers stay on this device only.')}
+
+/* ---- Pages ---- */
+function card(g){
+  const k=g._key,p=D.plays[k]||0,f=D.fav[k],img=covers[k]||g.thumb;
+  return `<article class="card" tabindex="0" data-key="${esc(k)}"><div class="art" style="background:linear-gradient(135deg,hsl(${g._h} 65% 46%),hsl(${(g._h+55)%360} 65% 30%))">${img?`<img src="${esc(img)}" alt="" loading="lazy" decoding="async">`:esc(g.title[0].toUpperCase())}<button class="sv ${f?'on':''}" data-fav="${esc(k)}">${f?'Saved':'Save'}</button><button class="sv cv" data-cov="${esc(k)}">Cover</button></div><div class="info"><h3>${esc(g.title)}</h3><p>${esc(g.desc||'')}</p><small>${esc((g.tags||[]).join(', '))}${p?`<i class="pc"> | played ${p}x</i>`:''}</small></div></article>`;
+}
 function libList(){
-  const q=$('q').value.trim().toLowerCase();
-  const r=lib[kind].map(g=>({...g,kind})).filter(g=>(!q||match(g,q))&&(tag==='all'||(tag==='fav'?D.fav[key(g)]:tag==='recent'?D.last[key(g)]:(g.tags||[]).includes(tag))));
-  const P=g=>D.plays[key(g)]||0,L=g=>D.last[key(g)]||0;
-  return r.sort({az:(a,b)=>a.title.localeCompare(b.title),za:(a,b)=>b.title.localeCompare(a.title),recent:(a,b)=>L(b)-L(a),plays:(a,b)=>P(b)-P(a)}[cfg.sort]);
+  const q=$('q').value.trim().toLowerCase(),s=cfg.sort;
+  const r=lib[kind].filter(g=>(!q||g._hay.includes(q))&&(tag==='all'||(tag==='fav'?D.fav[g._key]:tag==='recent'?D.last[g._key]:(g.tags||[]).includes(tag))));
+  if(s==='az')return r;if(s==='za')return r.reverse();
+  const P=g=>D.plays[g._key]||0,L=g=>D.last[g._key]||0;
+  return r.sort(s==='recent'?(a,b)=>L(b)-L(a):(a,b)=>P(b)-P(a));
+}
+const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))more()},{root:$('main'),rootMargin:'700px'});
+function more(){
+  const b=$('grid').querySelector('[data-more]');if(!b)return;
+  const r=libList(),a=cap;cap+=96;
+  b.insertAdjacentHTML('beforebegin',r.slice(a,cap).map(card).join(''));
+  if(r.length<=cap)b.remove();else b.textContent=`Show more (${r.length-cap} left)`;
 }
 function renderLib(){
   const r=libList(),tags=[...new Set(lib[kind].flatMap(g=>g.tags||[]))].sort();
   $('grid').innerHTML=r.slice(0,cap).map(card).join('')+(r.length>cap?`<button class="btn" data-more="1" style="grid-column:1/-1">Show more (${r.length-cap} left)</button>`:'');
+  const mb=$('grid').querySelector('[data-more]');if(mb)io.observe(mb);
   $('empty').hidden=r.length>0;
-  $('empty').textContent=lib[kind].length?'No matches. Try a different search or filter.':`No ${kind} found. Put .html files in the ${kind} folder on GitHub. `+notes.join('. ');
+  $('empty').textContent=lib[kind].length?'No matches. Try a different search or filter.':`No ${kind} found. Put each game in its own folder inside the ${kind} folder on GitHub. `+notes.join('. ');
   $('chips').innerHTML=[['all','All'],['fav','Favorites'],['recent','Recent'],...tags.map(t=>[t,t])].map(([k,l])=>`<button class="btn ${k===tag?'on':''}" data-tag="${esc(k)}">${esc(l)}</button>`).join('');
 }
 function renderHome(){
-  const q=$('hq').value.trim().toLowerCase(),A=all(),grid=a=>`<div class="cards">${a.map(card).join('')}</div>`;
-  if(q){const r=A.filter(g=>match(g,q));$('hbody').innerHTML=r.length?'<h2>Results</h2>'+grid(r.slice(0,60))+(r.length>60?`<p class="mute" style="margin-top:12px">Showing 60 of ${r.length}. Use the Games or Tools page to browse the rest.</p>`:''):'<p class="mute" style="margin-top:20px">Nothing found.</p>';return}
-  const rec=A.filter(g=>D.last[key(g)]).sort((a,b)=>D.last[key(b)]-D.last[key(a)]).slice(0,6),fav=A.filter(g=>D.fav[key(g)]);
+  const q=$('hq').value.trim().toLowerCase(),grid=a=>`<div class="cards">${a.map(card).join('')}</div>`;
+  if(q){const r=ALL.filter(g=>g._hay.includes(q));$('hbody').innerHTML=r.length?'<h2>Results</h2>'+grid(r.slice(0,60))+(r.length>60?`<p class="mute" style="margin-top:12px">Showing 60 of ${r.length}. Use the Games or Tools page to browse the rest.</p>`:''):'<p class="mute" style="margin-top:20px">Nothing found.</p>';return}
+  const rec=ALL.filter(g=>D.last[g._key]).sort((a,b)=>D.last[b._key]-D.last[a._key]).slice(0,6),fav=ALL.filter(g=>D.fav[g._key]);
   $('hbody').innerHTML=`<div class="tiles"><button class="panel tile" data-pg="games"><b>Games</b><span>${lib.games.length} available</span></button><button class="panel tile" data-pg="tools"><b>Tools</b><span>${lib.tools.length} available</span></button></div>`+
     (rec.length?'<h2>Continue</h2>'+grid(rec):'')+(fav.length?'<h2>Favorites</h2>'+grid(fav):'')+
-    (rec.length||fav.length?'':'<p class="mute" style="margin-top:20px">'+(lib.games.length+lib.tools.length?'Open a game or tool and it will show up here. Saved items appear here too.':'No games or tools found yet. '+notes.join('. '))+'</p>');
+    (rec.length||fav.length?'':'<p class="mute" style="margin-top:20px">'+(ALL.length?'Open a game or tool and it will show up here. Saved items appear here too.':'No games or tools found yet. '+notes.join('. '))+'</p>');
 }
-const refresh=()=>pg==='home'?renderHome():pg==='settings'?(renderSaves(),libStatus()):renderLib();
+const refresh=()=>pg==='home'?renderHome():pg==='settings'?(renderSaves(),libStatus(),covStatus()):renderLib();
 function go(p){
   pg=p;document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   $(p==='games'||p==='tools'?'p-lib':'p-'+p).classList.add('on');
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.pg===p));
-  if(p==='games'||p==='tools'){kind=p;tag='all';cap=240;$('q').value='';$('lt').textContent=p==='games'?'Games':'Tools'}
+  if(p==='games'||p==='tools'){kind=p;tag='all';cap=96;$('q').value='';$('lt').textContent=p==='games'?'Games':'Tools'}
   refresh();$('main').scrollTop=0;
 }
-function tick(){const d=new Date();$('clock').textContent=d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+'  |  '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:!cfg.clock24})}
-function favBtn(){$('pfav').textContent=cur&&D.fav[key(cur)]?'Saved':'Save'}
-function toggleFav(k){D.fav[k]=!D.fav[k];if(!D.fav[k])delete D.fav[k];saveD();favBtn();refresh()}
-function inject(html,base,gk){
-  const t='<base href="'+base+'"><script>('+shim.toString()+')('+JSON.stringify(gk).replace(/</g,'\\u003c')+')<\/script>';
-  if(/<head[^>]*>/i.test(html))return html.replace(/<head[^>]*>/i,m=>m+t);
-  if(/<html[^>]*>/i.test(html))return html.replace(/<html[^>]*>/i,m=>m+'<head>'+t+'</head>');
-  return t+html;
+function tick(){if(document.body.classList.contains('playing')||!cfg.clock)return;const d=new Date();$('clock').textContent=d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+'  |  '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:!cfg.clock24})}
+function favBtn(){$('pfav').textContent=cur&&D.fav[cur._key]?'Saved':'Save'}
+function toggleFav(k){
+  D.fav[k]=!D.fav[k];if(!D.fav[k])delete D.fav[k];saveD();favBtn();
+  document.querySelectorAll('[data-fav]').forEach(b=>{if(b.dataset.fav===k){b.classList.toggle('on',!!D.fav[k]);b.textContent=D.fav[k]?'Saved':'Save'}});
+  if(pg==='home'||tag==='fav')refresh();
 }
+function setFrame(u){if(frameUrl)URL.revokeObjectURL(frameUrl);frameUrl=u;$('frame').src=u||'about:blank'}
 async function open(g){
   if(!g)return;
-  cur=g;ready=false;$('player').hidden=false;$('ptitle').textContent=g.title;favBtn();$('frame').srcdoc='';
-  $('msg').hidden=false;$('msg').innerHTML='<div><div class="spin"></div>Loading '+esc(g.title)+'...</div>';
+  cur=g;ready=false;document.body.classList.add('playing');$('player').hidden=false;$('ptitle').textContent=g.title;favBtn();setFrame('');
+  if(cfg.gfs&&!document.fullscreenElement)try{const f=$('frame').requestFullscreen();f&&f.catch&&f.catch(()=>{})}catch(e){}
+  $('msg').hidden=false;$('msg').innerHTML='<div><div class="spin"></div><span id="mp">Loading '+esc(g.title)+'...</span></div>';
   try{
-    const url=new URL(g.file,ROOT).href,r=await fetchMirror(url);
-    if(!r.ok)throw Error('HTTP '+r.status+' loading '+(r.url||url)+' (check that the file exists and the repo is public)');
-    const txt=await r.text();if(cur!==g)return;
-    ready=true;$('frame').srcdoc=inject(txt,new URL('.',r.url||url).href,key(g));
-    const k=key(g);D.plays[k]=(D.plays[k]||0)+1;D.last[k]=Date.now();saveD();
+    const url=new URL(g.file,ROOT).href,res=await getGame(url,n=>{const e=$('mp');if(e&&cur===g)e.textContent='Loading '+g.title+'... '+(n/1048576).toFixed(1)+' MB'});
+    if(cur!==g)return;
+    const blob=prep(res.buf,new URL('.',res.url).href,g._key);
+    ready=true;setFrame(URL.createObjectURL(blob));
+    D.plays[g._key]=(D.plays[g._key]||0)+1;D.last[g._key]=Date.now();saveD();
   }catch(e){
     $('msg').innerHTML='<div><h3>Could not load '+esc(g.title)+'</h3><p>'+esc(e.message)+'</p><br><button class="btn" id="retry">Try again</button></div>';
   }
 }
 $('frame').onload=()=>{if(!ready)return;$('msg').hidden=true;$('frame').focus();try{$('frame').contentWindow.focus()}catch(e){}};
 
+/* ---- Covers ---- */
+const loadImg=f=>new Promise((res,rej)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);res(im)};im.onerror=()=>{URL.revokeObjectURL(u);rej(Error('That file is not an image'))};im.src=u});
+function draw(im,w,h,fit,type,q){const k=document.createElement('canvas');k.width=w;k.height=h;const s=(fit==='cover'?Math.max:Math.min)(w/im.width,h/im.height),dw=im.width*s,dh=im.height*s;k.getContext('2d').drawImage(im,(w-dw)/2,(h-dh)/2,dw,dh);return k.toDataURL(type,q)}
+const ghh=()=>({Authorization:'Bearer '+token,Accept:'application/vnd.github+json'});
+async function gerr(r){let m='';try{m=(await r.json()).message||''}catch(e){}return 'GitHub '+r.status+(r.status===401?' (token rejected)':r.status===403||r.status===404?' (token may lack write access to this repo)':'')+(m?': '+m:'')}
+async function publishCover(g,du){
+  if(!RI)throw Error('Not loaded from a jsDelivr GitHub link');
+  if(/^[0-9a-f]{40}$/i.test(RI.ver))throw Error('Your link is pinned to a commit. Use @main to upload.');
+  const p=/\.(png|jpe?g|webp)$/i.test(g._cov)?g._cov:g._cov.replace(/\.[^./]+$/,'')+'.jpg',path=enc(RI.sub+p),br=RI.ver;
+  const api='https://api.github.com/repos/'+RI.user+'/'+RI.repo+'/contents/'+path;
+  let sha;const r1=await fetch(api+(br?'?ref='+encodeURIComponent(br):''),{headers:ghh(),signal:tmo(15000)});
+  if(r1.ok)sha=(await r1.json()).sha;else if(r1.status!==404)throw Error(await gerr(r1));
+  const r2=await fetch(api,{method:'PUT',headers:{...ghh(),'Content-Type':'application/json'},body:JSON.stringify({message:'Add cover for '+g.title,content:du.split(',')[1],...(br?{branch:br}:{}),...(sha?{sha}:{})}),signal:tmo(30000)});
+  if(!r2.ok)throw Error(await gerr(r2));
+  store.set('gp_scan',null);
+  fetch('https://purge.jsdelivr.net/gh/'+RI.user+'/'+RI.repo+(br?'@'+br:'')+'/'+path,{mode:'no-cors'}).catch(()=>{});
+}
+
+/* ---- Events ---- */
 document.addEventListener('click',e=>{
   const t=e.target;let n;
   if(n=t.closest('[data-fav]'))return toggleFav(n.dataset.fav);
-  if(n=t.closest('.card'))return open(all().find(g=>key(g)===n.dataset.key));
-  if(n=t.closest('[data-more]')){cap+=240;return renderLib()}
-  if(n=t.closest('[data-tag]')){tag=n.dataset.tag;cap=240;return renderLib()}
+  if(n=t.closest('[data-cov]')){covKey=n.dataset.cov;return $('covfile').click()}
+  if(n=t.closest('.card'))return open(MAP.get(n.dataset.key));
+  if(n=t.closest('[data-more]'))return more();
+  if(n=t.closest('[data-tag]')){tag=n.dataset.tag;cap=96;return renderLib()}
   if(n=t.closest('[data-pg]'))return go(n.dataset.pg);
   if(n=t.closest('[data-set]')){const k=n.dataset.set;cfg[k]=n.dataset.v;if(k==='ui')cfg.radius=null;saveC();apply();return sync()}
   if(n=t.closest('[data-clr]')){const g=n.dataset.clr;if(confirm('Delete the saved data for this game?')){sv.clear(g);renderSaves();toast('Save cleared')}return}
   if(t.id==='retry')open(cur);
 });
+let hv=null,ht;
+const warm=e=>{const c=e.target.closest&&e.target.closest('.card');if(!c||c===hv)return;hv=c;clearTimeout(ht);ht=setTimeout(()=>{const g=MAP.get(c.dataset.key);if(g&&!(navigator.connection&&navigator.connection.saveData))getGame(new URL(g.file,ROOT).href).catch(()=>{})},250)};
+document.addEventListener('pointerover',warm);document.addEventListener('focusin',warm);document.addEventListener('touchstart',warm,{passive:true});
 document.addEventListener('input',e=>{
   const t=e.target,k=t.dataset.k;if(!k)return;
   cfg[k]=t.type==='checkbox'?t.checked:t.type==='range'?+t.value:t.value;
-  saveC();apply();if(k==='clock24')tick();if(k==='sort'||k==='desc')refresh();
+  if(k==='remember'){if(cfg.remember)store.set('gp_tok',token);else try{localStorage.removeItem('gp_tok')}catch(x){}}
+  saveC();qa();
+  if(k==='clock24'||k==='clock')tick();
+  if(['sort','desc','plays','shape'].includes(k))refresh();
+  if(k==='cloak')sync();
 });
 document.addEventListener('keydown',e=>{
   if(!$('player').hidden)return;
@@ -419,48 +605,75 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='Enter'&&a.classList.contains('card'))a.click();
   else if(e.key==='Escape'&&/INPUT/.test(a.tagName)){a.value='';a.blur();refresh()}
 });
-$('hq').oninput=renderHome;$('q').oninput=()=>{cap=240;renderLib()};$('lscan').onclick=async()=>{$('lstat').textContent='Scanning...';await loadLib(true);libStatus();toast('Library rescanned')};
+let dq;const deb=f=>()=>{clearTimeout(dq);dq=setTimeout(f,120)};
+$('hq').oninput=deb(renderHome);$('q').oninput=deb(()=>{cap=96;renderLib()});
+$('lscan').onclick=async()=>{$('lstat').textContent='Scanning...';await loadLib(true);libStatus();toast('Library rescanned')};
 $('view').onclick=()=>{cfg.view=cfg.view==='list'?'grid':'list';saveC();apply()};
 $('rand').onclick=()=>{const r=libList();if(r.length)open(r[Math.random()*r.length|0]);else toast('Nothing to pick from')};
-$('back').onclick=()=>{cur=null;ready=false;$('frame').srcdoc='';$('player').hidden=true;refresh()};
-$('pfav').onclick=()=>cur&&toggleFav(key(cur));
+$('covedit').onclick=()=>{covMode=!covMode;document.body.classList.toggle('covmode',covMode);$('covedit').classList.toggle('on',covMode);if(covMode)toast(RI&&token?'Click Cover on a card. It will also be saved to GitHub.':'Click Cover on a card. Add a GitHub token in Settings to also save it to your repo.',3500)};
+$('covfile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';const g=MAP.get(covKey);if(!f||!g)return;
+  try{
+    const ext=(g._cov||'').split('.').pop().toLowerCase(),type=ext==='png'?'image/png':ext==='webp'?'image/webp':'image/jpeg';
+    const du=draw(await loadImg(f),512,320,'cover',type,.82);
+    covers[g._key]=du;store.set('gp_cov',covers);refresh();toast('Cover saved on this device');
+    if(token&&RI&&g._cov&&g._k){toast('Uploading cover to GitHub...',6000);await publishCover(g,du);toast('Cover saved to GitHub. Other devices see it once the CDN refreshes.',4500)}
+  }catch(err){toast(err.message,5000)}
+};
+$('gtok').oninput=e=>{token=e.target.value.trim();if(cfg.remember)store.set('gp_tok',token);covStatus()};
+$('gtest').onclick=async()=>{
+  if(!RI)return toast('Not loaded from a jsDelivr GitHub link');if(!token)return toast('Enter a token first');
+  try{const r=await fetch('https://api.github.com/repos/'+RI.user+'/'+RI.repo,{headers:ghh(),signal:tmo(10000)}),j=await r.json().catch(()=>({}));
+    toast(!r.ok?'GitHub said '+r.status+(j.message?': '+j.message:''):j.permissions&&j.permissions.push?'Token works and can write to this repo':'Token works but cannot write to this repo',4500)}
+  catch(x){toast('Could not reach GitHub',3500)}
+};
+$('ccl').onclick=()=>{covers={};store.set('gp_cov',covers);refresh();toast('Local covers cleared')};
+$('cbtn').onclick=()=>$('cfile').click();
+$('cfile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{cfg.cimg=draw(await loadImg(f),64,64,'cover','image/png');saveC();apply()}catch(x){toast(x.message)}};
+$('cclr').onclick=()=>{cfg.cimg='';saveC();apply()};
+$('back').onclick=()=>{cur=null;ready=false;setFrame('');$('player').hidden=true;document.body.classList.remove('playing');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});sv.flush();refresh()};
+$('pfav').onclick=()=>cur&&toggleFav(cur._key);
 $('reload').onclick=()=>open(cur);
 $('full').onclick=()=>{const f=$('frame');(f.requestFullscreen||f.webkitRequestFullscreen||(()=>toast('Fullscreen is not available')))?.call(f)};
 $('accreset').onclick=()=>{cfg.accent='';saveC();apply();sync()};
 $('sclear').onclick=()=>{D={fav:{},plays:{},last:{}};saveD();refresh();toast('Favorites and history cleared')};
 $('sreset').onclick=()=>{cfg=Object.assign({},DEF);saveC();apply();sync();toast('Settings reset')};
 $('sexp').onclick=exportAll;
-$('ssall').onclick=()=>{if(confirm('Delete ALL saved game data on this device?')){sv.names(SP).forEach(n=>{delete sv.mem[n];try{if(storageOK)localStorage.removeItem(n)}catch(e){}});renderSaves();toast('All saves cleared')}};
+$('ssall').onclick=()=>{if(confirm('Delete ALL saved game data on this device?')){Object.keys(allSaves()).forEach(g=>sv.clear(g));renderSaves();toast('All saves cleared')}};
 $('simp').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{
     const o=JSON.parse(await f.text());if(!o||typeof o.saves!=='object')throw 0;let n=0;
-    for(const k in o.saves)if(k.startsWith(SP)&&typeof o.saves[k]==='string'){sv.mem[k]=o.saves[k];try{if(storageOK)localStorage.setItem(k,o.saves[k])}catch(x){}n++}
+    for(const k in o.saves)if(k.startsWith(SP)&&typeof o.saves[k]==='string'){const r=k.slice(SP.length),j=r.indexOf('|');if(j>0){sv.set(r.slice(0,j),r.slice(j+1),o.saves[k]);n++}}
+    sv.flush();
     if(o.hub&&o.hub.data){D=Object.assign({fav:{},plays:{},last:{}},o.hub.data);saveD()}
+    if(o.hub&&o.hub.cfg){cfg=Object.assign({},DEF,o.hub.cfg);saveC();apply();sync()}
     renderSaves();toast('Imported '+n+' saved items');
   }catch(x){toast('That is not a valid backup file')}
 };
 $('bgclear').onclick=()=>{bg='';try{localStorage.removeItem('gp_bg')}catch(e){}apply()};
-$('bgfile').onchange=e=>{
-  const f=e.target.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
-  im.onload=()=>{
-    const s=Math.min(1,1920/Math.max(im.width,im.height)),c=document.createElement('canvas');
-    c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-    bg=c.toDataURL('image/jpeg',.8);URL.revokeObjectURL(u);
-    try{localStorage.setItem('gp_bg',JSON.stringify(bg));toast('Background saved')}catch(x){toast('Image applied, but too large to remember after you close this tab')}
+$('bgfile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const im=await loadImg(f),s=Math.min(1,1600/Math.max(im.width,im.height));
+    bg=draw(im,Math.round(im.width*s),Math.round(im.height*s),'contain','image/jpeg',.8);
+    try{localStorage.setItem('gp_bg',JSON.stringify(bg));toast('Background saved')}catch(x){toast('Image applied, but too large to remember after you close this tab',4000)}
     apply();
-  };
-  im.onerror=()=>toast('That file is not an image');im.src=u;e.target.value='';
+  }catch(x){toast(x.message)}
 };
+addEventListener('pagehide',()=>{sv.flush();store.set('gp_cfg',cfg)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)sv.flush()});
+addEventListener('beforeunload',e=>{if(cfg.warn){e.preventDefault();e.returnValue=''}});
 
 (async()=>{
   $('themes').innerHTML=Object.entries(T).map(([k,v])=>`<button class="btn" data-set="theme" data-v="${k}"><i class="dot" style="background:linear-gradient(135deg,${v[1]} 50%,${v[3]} 50%)"></i>${v[0]}</button>`).join('');
   $('uis').innerHTML=Object.entries(UI).map(([k,v])=>`<button class="btn" data-set="ui" data-v="${k}">${v.n}</button>`).join('');
-  apply();sync();tick();setInterval(tick,15000);
+  apply();sync();tick();setInterval(tick,30000);
+  try{if(RI){const l=document.createElement('link');l.rel='preconnect';l.href=new URL(ROOT).origin;document.head.appendChild(l)}}catch(e){}
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
   $('hbody').innerHTML='<p class="mute" style="margin-top:20px">Loading library...</p>';
   await loadLib();
-  go('home');
+  go(['home','games','tools'].includes(cfg.start)?cfg.start:'home');
 })();
 })();
 </script>
