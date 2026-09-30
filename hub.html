@@ -51,7 +51,7 @@ select.btn option{color:#111;background:#fff}
 #hq{max-width:560px;margin-top:14px}
 #chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw),1fr));gap:16px}
-.card{content-visibility:auto;contain-intrinsic-size:auto 250px;contain:layout style paint;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s;will-change:transform}
+.card{content-visibility:auto;contain-intrinsic-size:auto 250px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s}
 .card:hover,.card:focus-visible{transform:translateY(var(--hv));border-color:var(--accent);box-shadow:var(--hs);outline:0}
 .art{position:relative;aspect-ratio:var(--ar,16/10);display:grid;place-items:center;font-size:2.6rem;font-weight:800;color:#fff;text-shadow:none}
 .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -201,8 +201,7 @@ body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{displ
 <div id="toast"></div>
 <script>
 (()=>{
-const _domCache={};
-const $=i=>_domCache[i]||(_domCache[i]=document.getElementById(i)),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ROOT=new URL('.',document.baseURI).href; /* the folder hub.html lives in (works when launched or opened directly) */
 const RM=ROOT.match(/\/gh\/([^/@]+)\/([^/@]+)(?:@([^/]+))?\/(.*)$/),RI=RM?{user:RM[1],repo:RM[2],ver:RM[3]||'',sub:RM[4]}:null;
 const mem={},store={
@@ -303,14 +302,14 @@ async function fetchMirror(href,opt){ /* small files: tries the next jsDelivr ho
   }
   throw err;
 }
-function race(url){ /* games: start on the main host, add a backup host every 1.8 s (or at once on failure), first answer wins */
-  const u=new URL(url),hs=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])].slice(0,4),cs=[];
+function race(url){ /* games: start on the main host, add a backup host every 0.8 s (or at once on failure), first answer wins */
+  const u=new URL(url),hs=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])].slice(0,6),cs=[];
   return new Promise((res,rej)=>{
     let done=false,fails=0,last,started=0;
     const begin=i=>{
       if(done||i>=hs.length||started>i)return;started=i+1;
-      const c=new AbortController(),to=setTimeout(()=>c.abort(),25000),v=new URL(url);cs.push(c);v.hostname=hs[i];
-      setTimeout(()=>begin(i+1),1800);
+      const c=new AbortController(),to=setTimeout(()=>c.abort(),10000),v=new URL(url);cs.push(c);v.hostname=hs[i];
+      setTimeout(()=>begin(i+1),800);
       fetch(v.href,{signal:c.signal}).then(r=>{
         clearTimeout(to);if(done)return;
         if(r.ok){done=true;cs.forEach(x=>x!==c&&x.abort());res(r)}else throw Error('HTTP '+r.status+' loading '+v.href+' (check that the file exists and the repo is public)');

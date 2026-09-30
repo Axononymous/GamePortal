@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Game Portal</title>
+<script>
+/* ================= EDIT THIS ONE LINE ================= */
+const HUB_URL = "https://cdn.jsdelivr.net/gh/axo323lotl-bit/GamePortalV2@main/hub.html";
+/* Example: https://cdn.jsdelivr.net/gh/USERNAME/REPOSITORY@main/hub.html */
+/* Mirrors: the launcher swaps only the host name, so the path stays the same. */
+const MIRRORS_OFFICIAL = ["cdn.jsdelivr.net","fastly.jsdelivr.net","gcore.jsdelivr.net","testingcf.jsdelivr.net","quantil.jsdelivr.net","originfastly.jsdelivr.net"];
+const MIRRORS_THIRD_PARTY = ["jsd.onmicrosoft.cn","cdn.staticdelivr.com"]; /* only used if you pick one by hand */
+/* ====================================================== */
+</script>
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{min-height:100%}
+body{min-height:100vh;display:grid;place-items:center;padding:16px;color:#eaf0ff;background:#07081a;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.bg{position:fixed;inset:0;overflow:hidden}
+.bg span{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:drift 12s ease-in-out infinite}
+.bg span:nth-child(1){width:340px;height:340px;background:#22e4ff;left:-90px;top:-70px}
+.bg span:nth-child(2){width:300px;height:300px;background:#b26bff;right:-70px;top:30%;animation-delay:-4s}
+.bg span:nth-child(3){width:320px;height:320px;background:#ff4d9d;left:25%;bottom:-140px;animation-delay:-8s}
+@keyframes drift{50%{transform:translate(40px,30px) scale(1.15)}}
+.card{position:relative;width:min(94vw,520px);padding:clamp(22px,5vw,40px);text-align:center;border-radius:24px;background:#ffffff0d;border:1px solid #ffffff24;backdrop-filter:blur(14px);box-shadow:0 30px 80px #000a;animation:rise .7s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(20px)}}
+.logo{font-size:3rem;display:inline-block;animation:bob 3s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-6deg)}}
+h1{font-size:clamp(1.8rem,8vw,2.8rem);letter-spacing:.04em;background:linear-gradient(90deg,#22e4ff,#b26bff,#ff4d9d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:#b9c3ee;margin:6px 0 18px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:24px}
+.chips i{font-style:normal;font-size:.82rem;padding:4px 12px;border-radius:999px;background:#ffffff12;border:1px solid #ffffff20;color:#cfd7ff}
+.go{font:inherit;font-size:1.25rem;font-weight:800;color:#fff;border:0;border-radius:999px;padding:.8em 2.4em;cursor:pointer;background:linear-gradient(135deg,#22e4ff,#7b5cff 60%,#ff4d9d);box-shadow:0 10px 34px #7b5cff88;animation:pulse 2.4s ease-in-out infinite;transition:transform .15s}
+.go:hover{transform:translateY(-3px) scale(1.05)}
+.go:active{transform:scale(.97)}
+.go:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.go:disabled{opacity:.6;cursor:wait;animation:none}
+@keyframes pulse{50%{box-shadow:0 10px 50px #22e4ffaa}}
+.status{display:none;margin-top:20px;padding:12px 16px;border-radius:14px;font-size:.92rem;text-align:left}
+.status.show{display:block}
+.status.load{background:#22e4ff1a;border:1px solid #22e4ff55}
+.status.ok{background:#3ddc8422;border:1px solid #3ddc8477}
+.status.warn{background:#ffd60a1f;border:1px solid #ffd60a77}
+.status.err{background:#ff4d6d22;border:1px solid #ff4d6d77}
+.spin{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:2px solid #ffffff40;border-top-color:#22e4ff;border-radius:50%;animation:r .7s linear infinite}
+@keyframes r{to{transform:rotate(1turn)}}
+.foot{margin-top:18px;font-size:.78rem;color:#8f9bd0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+.mir{display:block;margin:0 auto 18px;max-width:340px;text-align:left;font-size:.82rem;color:#b9c3ee}
+.mir select{width:100%;margin-top:6px;padding:.6em .8em;border-radius:12px;border:1px solid #ffffff30;background:#ffffff12;color:#eaf0ff;font:inherit}
+.mir option,.mir optgroup{color:#111;background:#fff}
+</style>
+</head>
+<body>
+<div class="bg"><span></span><span></span><span></span></div>
+<main class="card">
+  <div class="logo" style="width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,#22e4ff,#b26bff 60%,#ff4d9d)"></div>
+  <h1>GAME PORTAL</h1>
+  <p class="sub">Your game library in one click. Search, save favorites, and play.</p>
+  <div class="chips"><i>Games</i><i>Tools</i><i>Custom themes</i></div>
+  <label class="mir">Mirror<select id="mirror"></select></label>
+  <button class="go" id="go">Launch Game</button>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <p class="foot">The portal opens in a new tab.</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const btn = $("go"), box = $("status"), sel = $("mirror");
+
+function say(kind, html){ box.className = "status show " + kind; box.innerHTML = html; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function shell(inner){
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Loading</title><style>' +
+    'body{margin:0;height:100vh;display:grid;place-items:center;background:#07081a;color:#eaf0ff;font:18px system-ui,sans-serif;text-align:center;padding:20px}' +
+    '.s{width:46px;height:46px;margin:0 auto 18px;border:5px solid #ffffff30;border-top-color:#22e4ff;border-radius:50%;animation:r .8s linear infinite}' +
+    '@keyframes r{to{transform:rotate(1turn)}}p{color:#b9c3ee}</style></head><body><div>' + inner + '</div></body></html>';
+}
+function put(win, html){ win.document.open(); win.document.write(html.replace(/<\/script/gi, '<\\/script')); win.document.close(); }
+
+/* Same file, different CDN host. */
+function urlFor(host){ const u = new URL(HUB_URL); u.hostname = host; return u.href; }
+
+/* Makes relative paths resolve against the folder the file really came from. */
+function withBase(html, fromUrl){
+  const tag = '<base href="' + new URL(".", fromUrl).href + '">';
+  /* Our <base> goes first in <head>; browsers obey the first one, so nothing needs to be removed. */
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, m => m + tag);
+  if (/<html[^>]*>/i.test(html)) return html.replace(/<html[^>]*>/i, m => m + "<head>" + tag + "</head>");
+  return tag + html;
+}
+
+async function grab(url, ms){
+  const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
+  try{
+    const r = await fetch(url, { signal: c.signal, cache: "no-cache" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return { url: r.url || url, text: await r.text() };
+  } finally { clearTimeout(t); }
+}
+
+/* Mirror menu (remembers your choice when the browser allows it) */
+const opt = h => "<option>" + h + "</option>";
+sel.innerHTML = '<option value="auto">Auto (try jsDelivr hosts in order)</option>' +
+  '<optgroup label="jsDelivr hosts">' + MIRRORS_OFFICIAL.map(opt).join("") + "</optgroup>" +
+  '<optgroup label="Third-party mirrors (not run by jsDelivr)">' + MIRRORS_THIRD_PARTY.map(opt).join("") + "</optgroup>";
+try{ const s = localStorage.getItem("mirror"); if (s && [...sel.options].some(o => o.value === s)) sel.value = s; }catch(e){}
+sel.addEventListener("change", () => { try{ localStorage.setItem("mirror", sel.value); }catch(e){} });
+
+btn.addEventListener("click", async () => {
+  if (!HUB_URL || HUB_URL.indexOf("YOUR_JSDELIVR") !== -1){
+    say("err", "<b>Setup needed.</b> Open launcher.html and replace <code>YOUR_JSDELIVR_HUB_URL</code> with your real jsDelivr link.");
+    return;
+  }
+  /* Open the tab FIRST, straight from the click, so browsers allow it. */
+  const win = window.open("about:blank", "_blank");
+  if (!win || win.closed || typeof win.closed === "undefined"){
+    say("warn", "<b>Your browser blocked the new tab.</b> Click the pop-up icon at the right end of the address bar (or the lock icon, then Site settings), choose <b>Always allow pop-ups</b>, then click Launch Game again.");
+    return;
+  }
+  btn.disabled = true;
+  const hosts = sel.value === "auto" ? MIRRORS_OFFICIAL : [sel.value];
+  let got = null, used = "", last = null;
+  try{
+    put(win, shell('<div class="s"></div>Loading the portal...'));
+    for (const h of hosts){
+      say("load", '<span class="spin"></span>Loading from ' + esc(h) + "...");
+      try{ got = await grab(urlFor(h), 12000); used = h; break; }catch(e){ last = e; }
+    }
+    if (!got) throw last || new Error("No mirror answered.");
+    if (win.closed) throw new Error("The new tab was closed before the portal loaded.");
+    put(win, withBase(got.text, got.url));
+    say("ok", "<b>Portal opened</b> using " + esc(used) + ". If you closed the tab, click Launch Game again.");
+  }catch(err){
+    let why = err.message;
+    if (err.name === "AbortError") why = "It took too long to load.";
+    else if (err.name === "TypeError") why = "Could not reach the CDN. Try a different mirror from the menu.";
+    else if (/HTTP 404/.test(why)) why = "File not found (404). Check HUB_URL and make sure the GitHub repository is public.";
+    else if (err.name === "SecurityError") why = "The browser would not let this page write into the new tab (sandbox restriction).";
+    if (hosts.length > 1) why += " (Tried " + hosts.length + " mirrors.)";
+    try{ if (!win.closed) put(win, shell("<h2>Couldn't load the portal</h2><p>" + esc(why) + "</p><p>Close this tab and try again.</p>")); }catch(e){}
+    say("err", "<b>Couldn't load the portal.</b> " + esc(why));
+  }finally{
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
