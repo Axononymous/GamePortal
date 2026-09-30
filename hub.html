@@ -84,6 +84,7 @@ input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--
 #toast.show{opacity:1;transform:translate(-50%,0)}
 @media (max-width:640px){#nav button{min-width:0;flex:1}[data-nav=left] #nav button,[data-nav=right] #nav button{flex:none;min-width:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:var(--bw) solid var(--line)}
 </style>
 </head>
 <body>
@@ -134,6 +135,15 @@ input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--
         <div class="seg"><button class="btn" data-set="nav" data-v="bottom">Bottom</button><button class="btn" data-set="nav" data-v="left">Left</button><button class="btn" data-set="nav" data-v="right">Right</button></div>
         <div class="tg"><span>Show labels</span><input type="checkbox" data-k="labels"></div>
       </div>
+      <div class="panel"><h2>Library</h2>
+        <p class="mute" id="lstat">Loading...</p>
+        <div class="set seg"><button class="btn" id="lscan">Rescan folders</button></div>
+      </div>
+      <div class="panel"><h2>Saved data</h2>
+        <p class="mute" id="sstat"></p>
+        <div id="saves" style="margin-top:8px"></div>
+        <div class="set seg"><button class="btn" id="sexp">Export backup</button><label class="btn">Import backup<input type="file" id="simp" accept=".json,application/json" hidden></label><button class="btn" id="ssall">Clear all saves</button></div>
+      </div>
       <div class="panel"><h2>General</h2>
         <div class="set"><label>Portal name</label><input class="in" type="text" data-k="name" maxlength="40"></div>
         <div class="tg"><span>24-hour clock</span><input type="checkbox" data-k="clock24"></div>
@@ -158,7 +168,7 @@ input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--
 <script>
 (()=>{
 const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const ROOT=document.baseURI; /* folder hub.html was loaded from (the launcher sets it) */
+const ROOT=new URL('.',document.baseURI).href; /* the folder hub.html lives in (works when launched or opened directly) */
 const mem={},store={
   get(k,d){try{const v=localStorage.getItem(k);if(v!==null)return JSON.parse(v)}catch(e){}return k in mem?mem[k]:d},
   set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -168,9 +178,67 @@ const UI={modern:{n:'Modern',r:16,bw:1,bl:0,f:'sans',hs:GLOW,hv:-5},minimal:{n:'
 const FONT={sans:'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',serif:'Georgia,"Times New Roman",serif',mono:'ui-monospace,Consolas,"Courier New",monospace'};
 const DEF={name:'Game Portal',theme:'night',cbg:'#101820',ctext:'#f2f2f2',accent:'',ui:'modern',font:'auto',radius:null,size:210,anim:true,desc:true,nav:'bottom',labels:true,clock24:false,view:'grid',sort:'az',dim:35,blur:0};
 let cfg=Object.assign({},DEF,store.get('gp_cfg',{})),D=Object.assign({fav:{},plays:{},last:{}},store.get('gp_data',{})),bg=store.get('gp_bg','');
-let lib={games:[],tools:[]},pg='home',kind='games',tag='all',cur=null,ready=false,loadErr=false,tt;
+let lib={games:[],tools:[]},pg='home',kind='games',tag='all',cur=null,ready=false,notes=[],cap=240,tt;
 const saveC=()=>store.set('gp_cfg',cfg),saveD=()=>store.set('gp_data',D);
 const key=g=>g.kind+':'+g.id,all=()=>[...lib.games.map(g=>({...g,kind:'games'})),...lib.tools.map(g=>({...g,kind:'tools'}))];
+/* ---- Game saves: each game gets its own private slot inside browser storage ---- */
+const SP='gpsave:';
+const storageOK=(()=>{try{localStorage.setItem('gp_t','1');localStorage.removeItem('gp_t');return true}catch(e){return false}})();
+const sv={mem:{},
+  raw(n){try{if(storageOK){const v=localStorage.getItem(n);if(v!==null)return v}}catch(e){}return n in sv.mem?sv.mem[n]:null},
+  names(p){const s=new Set(Object.keys(sv.mem).filter(n=>n.startsWith(p)));try{if(storageOK)for(let i=0;i<localStorage.length;i++){const n=localStorage.key(i);if(n&&n.startsWith(p))s.add(n)}}catch(e){}return[...s]},
+  get:(g,k)=>sv.raw(SP+g+'|'+k),
+  set(g,k,v){const n=SP+g+'|'+k;sv.mem[n]=v;try{if(storageOK)localStorage.setItem(n,v)}catch(e){toast('Browser storage is full. This save lasts only until you close the tab.')}},
+  del(g,k){const n=SP+g+'|'+k;delete sv.mem[n];try{if(storageOK)localStorage.removeItem(n)}catch(e){}},
+  keys:g=>sv.names(SP+g+'|').map(n=>n.slice((SP+g+'|').length)),
+  clear(g){sv.names(SP+g+'|').forEach(n=>{delete sv.mem[n];try{if(storageOK)localStorage.removeItem(n)}catch(e){}})}
+};
+window.__gp=sv;
+/* This function's source is copied into every game, so it runs before the game's own code.
+   It swaps the game's localStorage for the hub's per-game storage. */
+function shim(G){
+  try{
+    var P=window.parent.__gp;if(!P)return;
+    var api={
+      getItem:function(k){return P.get(G,String(k))},
+      setItem:function(k,v){P.set(G,String(k),String(v))},
+      removeItem:function(k){P.del(G,String(k))},
+      clear:function(){P.clear(G)},
+      key:function(i){var a=P.keys(G);return i<a.length?a[i]:null}
+    };
+    var S=new Proxy(api,{
+      get:function(t,p){
+        if(p==='length')return P.keys(G).length;
+        if(p in t)return t[p];
+        if(typeof p==='string'){var v=P.get(G,p);return v===null?undefined:v}
+      },
+      set:function(t,p,v){P.set(G,String(p),String(v));return true},
+      deleteProperty:function(t,p){P.del(G,String(p));return true},
+      has:function(t,p){return p in t||(typeof p==='string'&&P.get(G,p)!==null)},
+      ownKeys:function(){return P.keys(G)},
+      getOwnPropertyDescriptor:function(t,p){var v=typeof p==='string'?P.get(G,p):null;return v===null?undefined:{value:v,enumerable:true,configurable:true,writable:true}}
+    });
+    Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return S}});
+  }catch(e){}
+}
+function renderSaves(){
+  $('sstat').textContent=storageOK?'Browser storage is working. Game saves stay on this device until you clear your browser data.':'Browser storage is blocked here, so saves last only until you close this tab. Export a backup before you leave.';
+  const m={};
+  sv.names(SP).forEach(n=>{const g=n.slice(SP.length).split('|')[0];(m[g]=m[g]||{n:0,b:0}).n++;m[g].b+=n.length+(sv.raw(n)||'').length});
+  const ks=Object.keys(m);
+  $('saves').innerHTML=ks.length?ks.map(g=>`<div class="srow"><span>${esc((all().find(x=>key(x)===g)||{}).title||g)} <small class="mute">${m[g].n} items, ${Math.max(1,Math.round(m[g].b/1024))} KB</small></span><button class="btn" data-clr="${esc(g)}">Clear</button></div>`).join(''):'<p class="mute">No saved game data yet. Games that use localStorage save here automatically.</p>';
+}
+function exportAll(){
+  const o={v:1,saves:{},hub:{data:D}};sv.names(SP).forEach(n=>o.saves[n]=sv.raw(n));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));
+  a.download='portal-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Backup downloaded');
+}
+const HOSTS=['cdn.jsdelivr.net','fastly.jsdelivr.net','gcore.jsdelivr.net','testingcf.jsdelivr.net','quantil.jsdelivr.net','originfastly.jsdelivr.net'];
+async function fetchMirror(href,opt){ /* retries other jsDelivr hosts if this one is unreachable */
+  const u=new URL(href),list=[u.hostname,...(HOSTS.includes(u.hostname)?HOSTS.filter(x=>x!==u.hostname):[])];let err;
+  for(const x of list){try{u.hostname=x;const r=await fetch(u.href,opt);if(r.ok||r.status<500)return r;err=Error('HTTP '+r.status)}catch(e){err=e}}
+  throw err;
+}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)}
 function colors(){const c=cfg.theme==='custom'?['',cfg.cbg,cfg.ctext,T.custom[3]]:(T[cfg.theme]||T.night);return{bg:c[1],text:c[2],accent:c[3]}}
 
@@ -203,6 +271,76 @@ function card(g){
   const k=key(g),h=hue(k),p=D.plays[k]||0,f=D.fav[k];
   return `<article class="card" tabindex="0" data-key="${esc(k)}"><div class="art" style="background:linear-gradient(135deg,hsl(${h} 65% 46%),hsl(${(h+55)%360} 65% 30%))">${g.thumb?`<img src="${esc(g.thumb)}" alt="" loading="lazy">`:esc(g.title[0].toUpperCase())}<button class="sv ${f?'on':''}" data-fav="${esc(k)}">${f?'Saved':'Save'}</button></div><div class="info"><h3>${esc(g.title)}</h3><p>${esc(g.desc||'')}</p><small>${esc((g.tags||[]).join(', '))}${p?' | played '+p+'x':''}</small></div></article>`;
 }
+/* ---- Library: auto-detects everything in the games/ and tools/ folders; library.json is optional ---- */
+const EXT=['png','jpg','jpeg','webp','gif','svg'];
+const enc=p=>p.split('/').map(encodeURIComponent).join('/');
+const nrm=f=>{f=String(f).replace(/^\.?\//,'');try{return decodeURIComponent(f)}catch(e){return f}};
+const pretty=s=>s.replace(/[-_.]+/g,' ').replace(/\s+/g,' ').trim().replace(/\b[a-z]/g,c=>c.toUpperCase());
+const flat=(fs,pre='')=>(fs||[]).flatMap(f=>f.type==='directory'?flat(f.files,pre+f.name+'/'):[f.name.startsWith('/')?f.name.slice(1):pre+f.name]);
+async function scan(force){
+  const M=ROOT.match(/\/gh\/([^/@]+)\/([^/@]+)(?:@([^/]+))?\/(.*)$/);
+  if(!M)throw Error('this page was not loaded from a jsDelivr GitHub link');
+  const [,user,repo,ver,sub]=M,tk=user+'/'+repo+'@'+ver+'/'+sub,c=store.get('gp_scan',null);
+  if(!force&&c&&c.k===tk&&Date.now()-c.t<6e5)return c.p;
+  let files;
+  try{
+    const r=await fetch('https://data.jsdelivr.com/v1/packages/gh/'+user+'/'+repo+(ver?'@'+ver:'')+'?structure=flat',{cache:'no-cache'});
+    if(!r.ok)throw Error('jsDelivr file list HTTP '+r.status+(r.status===403?' (repo over 50 MB?)':''));
+    files=flat((await r.json()).files);
+  }catch(e1){
+    try{
+      const r=await fetch('https://api.github.com/repos/'+user+'/'+repo+'/git/trees/'+(ver||'HEAD')+'?recursive=1');
+      if(!r.ok)throw Error('GitHub HTTP '+r.status);
+      files=(await r.json()).tree.filter(t=>t.type==='blob').map(t=>t.path);
+    }catch(e2){if(c&&c.k===tk)return c.p;throw Error(e1.message+' / '+e2.message)}
+  }
+  const p=files.filter(f=>f.startsWith(sub)).map(f=>f.slice(sub.length)).filter(f=>/^(games|tools)\/.+\.(html?|png|jpe?g|webp|gif|svg)$/i.test(f));
+  store.set('gp_scan',{k:tk,t:Date.now(),p});return p;
+}
+function build(paths,man){
+  const set=new Set(paths),out={games:[],tools:[]},isIdx=n=>/^index\.html?$/i.test(n);
+  for(const k of ['games','tools']){
+    const auto=[],gd=new Set(paths.filter(p=>p.startsWith(k+'/')&&/\/index\.html?$/i.test(p)&&p.split('/').length>2).map(p=>p.replace(/[^/]*$/,'')));
+    for(const p of paths){
+      if(!p.startsWith(k+'/')||!/\.html?$/i.test(p))continue;
+      const parts=p.split('/'),name=parts.pop();let dir=null;
+      for(let i=2;i<=parts.length&&!dir;i++){const d=parts.slice(0,i).join('/')+'/';if(gd.has(d))dir=d}
+      if(dir?(p!==dir+name||!isIdx(name)):(parts.length===1&&isIdx(name)))continue; /* folder-games count once, via index.html */
+      let base,tags,td,names;
+      if(dir){tags=dir.slice(0,-1).split('/').slice(1);base=tags.pop();td=dir;names=['thumb','thumbnail','cover','icon','preview',base]}
+      else{tags=parts.slice(1);base=name.replace(/\.html?$/i,'');td=parts.join('/')+'/';names=[base]}
+      let th='';for(const n of names)for(const e of EXT)if(!th&&set.has(td+n+'.'+e))th=td+n+'.'+e;
+      auto.push({id:dir?dir.slice(k.length+1,-1):p.slice(k.length+1).replace(/\.html?$/i,''),title:pretty(base),file:enc(p),tags,thumb:th?enc(th):undefined,_k:p});
+    }
+    const idx=new Map(auto.map(a=>[a._k,a]));
+    for(const m of man[k]||[]){
+      if(!m||!m.file)continue;
+      const f=nrm(m.file),a=idx.get(f);
+      if(a)Object.assign(a,m,{file:a.file});
+      else auto.push({id:f.replace(/\.html?$/i,''),title:pretty((f.split('/').pop()||'').replace(/\.html?$/i,'')),tags:[],...m});
+    }
+    out[k]=auto.filter(a=>!a.hidden);
+  }
+  return out;
+}
+async function loadLib(force){
+  notes=[];const man={games:[],tools:[]};let auto=true,paths=[],miss='';
+  try{
+    const r=await fetchMirror(new URL('library.json',ROOT).href,{cache:'no-cache'});
+    if(r.ok){
+      try{let j=await r.json();if(Array.isArray(j))j={games:j};man.games=j.games||[];man.tools=j.tools||[];auto=j.autodetect!==false}
+      catch(e){notes.push('library.json is not valid JSON ('+e.message+')')}
+    }else if(r.status===404)miss=r.url;
+    else notes.push('library.json returned HTTP '+r.status+' at '+r.url);
+  }catch(e){notes.push('could not fetch library.json ('+e.message+')')}
+  if(auto){try{paths=await scan(force)}catch(e){notes.push('auto-detect failed: '+e.message)}}
+  lib=build(paths,man);
+  if(miss&&!lib.games.length&&!lib.tools.length)notes.unshift('library.json was not found at '+miss);
+}
+function libStatus(){
+  const g=lib.games.length,t=lib.tools.length,a=[...lib.games,...lib.tools].filter(x=>x._k).length;
+  $('lstat').textContent=`Found ${g} games and ${t} tools (${a} auto-detected from the folders, ${g+t-a} from library.json). `+(notes.length?'Notes: '+notes.join('. ')+'.':'');
+}
 const match=(g,q)=>`${g.title} ${g.desc||''} ${(g.tags||[]).join(' ')}`.toLowerCase().includes(q);
 function libList(){
   const q=$('q').value.trim().toLowerCase();
@@ -212,32 +350,32 @@ function libList(){
 }
 function renderLib(){
   const r=libList(),tags=[...new Set(lib[kind].flatMap(g=>g.tags||[]))].sort();
-  $('grid').innerHTML=r.map(card).join('');
+  $('grid').innerHTML=r.slice(0,cap).map(card).join('')+(r.length>cap?`<button class="btn" data-more="1" style="grid-column:1/-1">Show more (${r.length-cap} left)</button>`:'');
   $('empty').hidden=r.length>0;
-  $('empty').textContent=loadErr?'Could not load library.json. Make sure it sits next to hub.html on GitHub.':lib[kind].length?'No matches. Try a different search or filter.':`No ${kind} yet. Add .html files to the ${kind} folder on GitHub and list them in library.json.`;
+  $('empty').textContent=lib[kind].length?'No matches. Try a different search or filter.':`No ${kind} found. Put .html files in the ${kind} folder on GitHub. `+notes.join('. ');
   $('chips').innerHTML=[['all','All'],['fav','Favorites'],['recent','Recent'],...tags.map(t=>[t,t])].map(([k,l])=>`<button class="btn ${k===tag?'on':''}" data-tag="${esc(k)}">${esc(l)}</button>`).join('');
 }
 function renderHome(){
   const q=$('hq').value.trim().toLowerCase(),A=all(),grid=a=>`<div class="cards">${a.map(card).join('')}</div>`;
-  if(q){const r=A.filter(g=>match(g,q));$('hbody').innerHTML=r.length?'<h2>Results</h2>'+grid(r):'<p class="mute" style="margin-top:20px">Nothing found.</p>';return}
+  if(q){const r=A.filter(g=>match(g,q));$('hbody').innerHTML=r.length?'<h2>Results</h2>'+grid(r.slice(0,60))+(r.length>60?`<p class="mute" style="margin-top:12px">Showing 60 of ${r.length}. Use the Games or Tools page to browse the rest.</p>`:''):'<p class="mute" style="margin-top:20px">Nothing found.</p>';return}
   const rec=A.filter(g=>D.last[key(g)]).sort((a,b)=>D.last[key(b)]-D.last[key(a)]).slice(0,6),fav=A.filter(g=>D.fav[key(g)]);
   $('hbody').innerHTML=`<div class="tiles"><button class="panel tile" data-pg="games"><b>Games</b><span>${lib.games.length} available</span></button><button class="panel tile" data-pg="tools"><b>Tools</b><span>${lib.tools.length} available</span></button></div>`+
     (rec.length?'<h2>Continue</h2>'+grid(rec):'')+(fav.length?'<h2>Favorites</h2>'+grid(fav):'')+
-    (rec.length||fav.length?'':'<p class="mute" style="margin-top:20px">'+(loadErr?'Could not load library.json.':'Open a game or tool and it will show up here. Saved items appear here too.')+'</p>');
+    (rec.length||fav.length?'':'<p class="mute" style="margin-top:20px">'+(lib.games.length+lib.tools.length?'Open a game or tool and it will show up here. Saved items appear here too.':'No games or tools found yet. '+notes.join('. '))+'</p>');
 }
-const refresh=()=>pg==='home'?renderHome():pg==='settings'?0:renderLib();
+const refresh=()=>pg==='home'?renderHome():pg==='settings'?(renderSaves(),libStatus()):renderLib();
 function go(p){
   pg=p;document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   $(p==='games'||p==='tools'?'p-lib':'p-'+p).classList.add('on');
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.pg===p));
-  if(p==='games'||p==='tools'){kind=p;tag='all';$('q').value='';$('lt').textContent=p==='games'?'Games':'Tools'}
+  if(p==='games'||p==='tools'){kind=p;tag='all';cap=240;$('q').value='';$('lt').textContent=p==='games'?'Games':'Tools'}
   refresh();$('main').scrollTop=0;
 }
 function tick(){const d=new Date();$('clock').textContent=d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+'  |  '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:!cfg.clock24})}
 function favBtn(){$('pfav').textContent=cur&&D.fav[key(cur)]?'Saved':'Save'}
 function toggleFav(k){D.fav[k]=!D.fav[k];if(!D.fav[k])delete D.fav[k];saveD();favBtn();refresh()}
-function inject(html,base){
-  const t='<base href="'+base+'">';html=html.replace(/<base\b[^>]*>/gi,'');
+function inject(html,base,gk){
+  const t='<base href="'+base+'"><script>('+shim.toString()+')('+JSON.stringify(gk).replace(/</g,'\\u003c')+')<\/script>';
   if(/<head[^>]*>/i.test(html))return html.replace(/<head[^>]*>/i,m=>m+t);
   if(/<html[^>]*>/i.test(html))return html.replace(/<html[^>]*>/i,m=>m+'<head>'+t+'</head>');
   return t+html;
@@ -247,10 +385,10 @@ async function open(g){
   cur=g;ready=false;$('player').hidden=false;$('ptitle').textContent=g.title;favBtn();$('frame').srcdoc='';
   $('msg').hidden=false;$('msg').innerHTML='<div><div class="spin"></div>Loading '+esc(g.title)+'...</div>';
   try{
-    const url=new URL(g.file,ROOT).href,r=await fetch(url);
-    if(!r.ok)throw Error('HTTP '+r.status+' (file not found, or the repo is not public)');
+    const url=new URL(g.file,ROOT).href,r=await fetchMirror(url);
+    if(!r.ok)throw Error('HTTP '+r.status+' loading '+(r.url||url)+' (check that the file exists and the repo is public)');
     const txt=await r.text();if(cur!==g)return;
-    ready=true;$('frame').srcdoc=inject(txt,new URL('.',url).href);
+    ready=true;$('frame').srcdoc=inject(txt,new URL('.',r.url||url).href,key(g));
     const k=key(g);D.plays[k]=(D.plays[k]||0)+1;D.last[k]=Date.now();saveD();
   }catch(e){
     $('msg').innerHTML='<div><h3>Could not load '+esc(g.title)+'</h3><p>'+esc(e.message)+'</p><br><button class="btn" id="retry">Try again</button></div>';
@@ -262,9 +400,11 @@ document.addEventListener('click',e=>{
   const t=e.target;let n;
   if(n=t.closest('[data-fav]'))return toggleFav(n.dataset.fav);
   if(n=t.closest('.card'))return open(all().find(g=>key(g)===n.dataset.key));
-  if(n=t.closest('[data-tag]')){tag=n.dataset.tag;return renderLib()}
+  if(n=t.closest('[data-more]')){cap+=240;return renderLib()}
+  if(n=t.closest('[data-tag]')){tag=n.dataset.tag;cap=240;return renderLib()}
   if(n=t.closest('[data-pg]'))return go(n.dataset.pg);
   if(n=t.closest('[data-set]')){const k=n.dataset.set;cfg[k]=n.dataset.v;if(k==='ui')cfg.radius=null;saveC();apply();return sync()}
+  if(n=t.closest('[data-clr]')){const g=n.dataset.clr;if(confirm('Delete the saved data for this game?')){sv.clear(g);renderSaves();toast('Save cleared')}return}
   if(t.id==='retry')open(cur);
 });
 document.addEventListener('input',e=>{
@@ -279,7 +419,7 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='Enter'&&a.classList.contains('card'))a.click();
   else if(e.key==='Escape'&&/INPUT/.test(a.tagName)){a.value='';a.blur();refresh()}
 });
-$('hq').oninput=renderHome;$('q').oninput=renderLib;
+$('hq').oninput=renderHome;$('q').oninput=()=>{cap=240;renderLib()};$('lscan').onclick=async()=>{$('lstat').textContent='Scanning...';await loadLib(true);libStatus();toast('Library rescanned')};
 $('view').onclick=()=>{cfg.view=cfg.view==='list'?'grid':'list';saveC();apply()};
 $('rand').onclick=()=>{const r=libList();if(r.length)open(r[Math.random()*r.length|0]);else toast('Nothing to pick from')};
 $('back').onclick=()=>{cur=null;ready=false;$('frame').srcdoc='';$('player').hidden=true;refresh()};
@@ -289,6 +429,17 @@ $('full').onclick=()=>{const f=$('frame');(f.requestFullscreen||f.webkitRequestF
 $('accreset').onclick=()=>{cfg.accent='';saveC();apply();sync()};
 $('sclear').onclick=()=>{D={fav:{},plays:{},last:{}};saveD();refresh();toast('Favorites and history cleared')};
 $('sreset').onclick=()=>{cfg=Object.assign({},DEF);saveC();apply();sync();toast('Settings reset')};
+$('sexp').onclick=exportAll;
+$('ssall').onclick=()=>{if(confirm('Delete ALL saved game data on this device?')){sv.names(SP).forEach(n=>{delete sv.mem[n];try{if(storageOK)localStorage.removeItem(n)}catch(e){}});renderSaves();toast('All saves cleared')}};
+$('simp').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const o=JSON.parse(await f.text());if(!o||typeof o.saves!=='object')throw 0;let n=0;
+    for(const k in o.saves)if(k.startsWith(SP)&&typeof o.saves[k]==='string'){sv.mem[k]=o.saves[k];try{if(storageOK)localStorage.setItem(k,o.saves[k])}catch(x){}n++}
+    if(o.hub&&o.hub.data){D=Object.assign({fav:{},plays:{},last:{}},o.hub.data);saveD()}
+    renderSaves();toast('Imported '+n+' saved items');
+  }catch(x){toast('That is not a valid backup file')}
+};
 $('bgclear').onclick=()=>{bg='';try{localStorage.removeItem('gp_bg')}catch(e){}apply()};
 $('bgfile').onchange=e=>{
   const f=e.target.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
@@ -306,12 +457,9 @@ $('bgfile').onchange=e=>{
   $('themes').innerHTML=Object.entries(T).map(([k,v])=>`<button class="btn" data-set="theme" data-v="${k}"><i class="dot" style="background:linear-gradient(135deg,${v[1]} 50%,${v[3]} 50%)"></i>${v[0]}</button>`).join('');
   $('uis').innerHTML=Object.entries(UI).map(([k,v])=>`<button class="btn" data-set="ui" data-v="${k}">${v.n}</button>`).join('');
   apply();sync();tick();setInterval(tick,15000);
-  const ok=g=>g&&g.id&&g.title&&g.file;
-  try{
-    const r=await fetch(new URL('library.json',ROOT).href,{cache:'no-cache'});if(!r.ok)throw 0;
-    let j=await r.json();if(Array.isArray(j))j={games:j};
-    lib.games=(j.games||[]).filter(ok);lib.tools=(j.tools||[]).filter(ok);
-  }catch(e){loadErr=true}
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  $('hbody').innerHTML='<p class="mute" style="margin-top:20px">Loading library...</p>';
+  await loadLib();
   go('home');
 })();
 })();
