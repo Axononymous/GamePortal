@@ -16,22 +16,22 @@ const MIRRORS_THIRD_PARTY = ["jsd.onmicrosoft.cn","cdn.staticdelivr.com"]; /* on
 <style>
 *{box-sizing:border-box;margin:0}
 html,body{min-height:100%}
-body{min-height:100vh;display:grid;place-items:center;padding:16px;color:#eaf0ff;background:#07081a;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.bg{position:fixed;inset:0;overflow:hidden}
-.bg span{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:drift 12s ease-in-out infinite}
-.bg span:nth-child(1){width:340px;height:340px;background:#22e4ff;left:-90px;top:-70px}
-.bg span:nth-child(2){width:300px;height:300px;background:#b26bff;right:-70px;top:30%;animation-delay:-4s}
-.bg span:nth-child(3){width:320px;height:320px;background:#ff4d9d;left:25%;bottom:-140px;animation-delay:-8s}
+body{min-height:100vh;display:grid;place-items:center;padding:16px;color:#ece5d8;background:#1f1f1f;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.bg{display:none}
+.bg span{position:absolute;border-radius:50%;filter:blur(80px);opacity:.3;animation:drift 12s ease-in-out infinite}
+.bg span:nth-child(1){width:340px;height:340px;background:#f0a832;left:-90px;top:-70px}
+.bg span:nth-child(2){width:300px;height:300px;background:#7d8b6f;right:-70px;top:30%;animation-delay:-4s}
+.bg span:nth-child(3){width:320px;height:320px;background:#a35f36;left:25%;bottom:-140px;animation-delay:-8s}
 @keyframes drift{50%{transform:translate(40px,30px) scale(1.15)}}
-.card{position:relative;width:min(94vw,520px);padding:clamp(22px,5vw,40px);text-align:center;border-radius:24px;background:#ffffff0d;border:1px solid #ffffff24;backdrop-filter:blur(14px);box-shadow:0 30px 80px #000a;animation:rise .7s ease both}
+.card{position:relative;width:min(94vw,520px);padding:clamp(22px,5vw,40px);text-align:center;border-radius:14px;background:#242424f5;border:1px solid #ffffff1e;backdrop-filter:blur(14px);box-shadow:0 30px 80px -20px #000c;animation:rise .7s ease both}
 @keyframes rise{from{opacity:0;transform:translateY(20px)}}
-.logo{font-size:3rem;display:inline-block;animation:bob 3s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(-8px) rotate(-6deg)}}
-h1{font-size:clamp(1.8rem,8vw,2.8rem);letter-spacing:.04em;background:linear-gradient(90deg,#22e4ff,#b26bff,#ff4d9d);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{color:#b9c3ee;margin:6px 0 18px}
+h1{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:clamp(2rem,8vw,2.9rem);letter-spacing:.01em;color:#f2ede2}
+h1::after{content:"";display:block;width:64px;height:3px;background:#f0a832;margin:10px auto 0;border-radius:2px}
+.sub{color:#c9c2b4;margin:6px 0 18px}
 .chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:24px}
-.chips i{font-style:normal;font-size:.82rem;padding:4px 12px;border-radius:999px;background:#ffffff12;border:1px solid #ffffff20;color:#cfd7ff}
-.go{font:inherit;font-size:1.25rem;font-weight:800;color:#fff;border:0;border-radius:999px;padding:.8em 2.4em;cursor:pointer;background:linear-gradient(135deg,#22e4ff,#7b5cff 60%,#ff4d9d);box-shadow:0 10px 34px #7b5cff88;animation:pulse 2.4s ease-in-out infinite;transition:transform .15s}
+.chips i{font:600 .72rem ui-monospace,Menlo,Consolas,monospace;font-style:normal;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px;border-radius:7px;background:#ffffff0d;border:1px solid #ffffff1e;color:#c9c2b4}
+.go{font:inherit;font-size:1.15rem;font-weight:700;color:#1c1408;border:0;border-radius:10px;padding:.8em 2.4em;cursor:pointer;background:#f0a832;transition:transform .15s,filter .15s}
 .go:hover{transform:translateY(-3px) scale(1.05)}
 .go:active{transform:scale(.97)}
 .go:focus-visible{outline:3px solid #fff;outline-offset:3px}
@@ -43,38 +43,34 @@ h1{font-size:clamp(1.8rem,8vw,2.8rem);letter-spacing:.04em;background:linear-gra
 .status.ok{background:#3ddc8422;border:1px solid #3ddc8477}
 .status.warn{background:#ffd60a1f;border:1px solid #ffd60a77}
 .status.err{background:#ff4d6d22;border:1px solid #ff4d6d77}
-.spin{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:2px solid #ffffff40;border-top-color:#22e4ff;border-radius:50%;animation:r .7s linear infinite}
+.spin{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:2px solid #ffffff40;border-top-color:#f0a832;border-radius:50%;animation:r .7s linear infinite}
 @keyframes r{to{transform:rotate(1turn)}}
 .foot{margin-top:18px;font-size:.78rem;color:#8f9bd0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
-.mir{display:block;margin:0 auto 18px;max-width:340px;text-align:left;font-size:.82rem;color:#b9c3ee}
-.mir select{width:100%;margin-top:6px;padding:.6em .8em;border-radius:12px;border:1px solid #ffffff30;background:#ffffff12;color:#eaf0ff;font:inherit}
+.mir{display:block;margin:0 auto 18px;max-width:340px;text-align:left;font-size:.82rem;color:#c9c2b4}
+.mir select{width:100%;margin-top:6px;padding:.6em .8em;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#ece5d8;font:inherit}
 .mir option,.mir optgroup{color:#111;background:#fff}
 /* ---- Modern layer ---- */
 body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 body::after{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 0%,transparent 55%,#0007)}
-.card{border:1px solid transparent;background:linear-gradient(#10122bf2,#0d0f26f2) padding-box,linear-gradient(135deg,#22e4ff70,#b26bff70,#ff4d9d70) border-box;box-shadow:0 40px 100px -20px #000d,0 0 0 1px #ffffff10}
-.logo{box-shadow:0 0 0 1px #ffffff2e,0 14px 44px -8px #7b5cffbb}
-h1{letter-spacing:.02em;filter:drop-shadow(0 4px 24px #7b5cff55)}
+.card{border-color:#ffffff22}
+h1{letter-spacing:.01em}
 .sub{font-size:1.02rem}
 .chips i{backdrop-filter:blur(6px)}
-.go{position:relative;overflow:hidden}
-.go::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,#ffffff55,transparent);transform:skewX(-20deg);animation:shine 3.2s ease-in-out infinite}
-@keyframes shine{0%,55%{left:-60%}100%{left:130%}}
+.go:hover{transform:translateY(-2px)}
 .mir select{border-radius:999px;transition:.15s}
-.mir select:focus{outline:none;border-color:#22e4ff66;box-shadow:0 0 0 3px #22e4ff2e}
+.mir select:focus{outline:none;border-color:#f0a83288;box-shadow:0 0 0 3px #f0a8322e}
 .status{border-radius:16px;backdrop-filter:blur(8px)}
 .card kbd{font:600 .78rem system-ui,sans-serif;padding:2px 8px;border-radius:6px;background:#ffffff14;border:1px solid #ffffff2c;border-bottom-width:2px}
-.foot{color:#9aa5d6}
+.foot{color:#938a76}
 @media (prefers-reduced-motion:reduce){.go::after{animation:none;display:none}}
 </style>
 </head>
 <body>
 <div class="bg"><span></span><span></span><span></span></div>
 <main class="card">
-  <div class="logo" style="width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,#22e4ff,#b26bff 60%,#ff4d9d)"></div>
   <h1>GAME PORTAL</h1>
-  <p class="sub">Your game library in one click. Search, save favorites, and play.</p>
+  <p class="sub">Every game in one place. Pick one and play &mdash; no sign-up, saves stay on your device.</p>
   <div class="chips"><i>Games</i><i>Tools</i><i>Custom themes</i></div>
   <label class="mir">Mirror<select id="mirror"></select></label>
   <button class="go" id="go">Launch Game</button>
@@ -89,9 +85,9 @@ function say(kind, html){ box.className = "status show " + kind; box.innerHTML =
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function shell(inner){
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Loading</title><style>' +
-    'body{margin:0;height:100vh;display:grid;place-items:center;background:#07081a;color:#eaf0ff;font:18px system-ui,sans-serif;text-align:center;padding:20px}' +
-    '.s{width:46px;height:46px;margin:0 auto 18px;border:5px solid #ffffff30;border-top-color:#22e4ff;border-radius:50%;animation:r .8s linear infinite}' +
-    '@keyframes r{to{transform:rotate(1turn)}}p{color:#b9c3ee}</style></head><body><div>' + inner + '</div></body></html>';
+    'body{margin:0;height:100vh;display:grid;place-items:center;background:#1f1f1f;color:#ece5d8;font:18px system-ui,sans-serif;text-align:center;padding:20px}' +
+    '.s{width:46px;height:46px;margin:0 auto 18px;border:5px solid #ffffff30;border-top-color:#f0a832;border-radius:50%;animation:r .8s linear infinite}' +
+    '@keyframes r{to{transform:rotate(1turn)}}p{color:#c9c2b4}</style></head><body><div>' + inner + '</div></body></html>';
 }
 function put(win, html){
   /* Escape inner closes so document.write does not cut the block early,
