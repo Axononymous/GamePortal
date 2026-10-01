@@ -88,6 +88,81 @@ input[type=color]{width:54px;height:34px;padding:0;border:var(--bw) solid var(--
 .cv{top:auto;bottom:8px;display:none}.covmode .cv{display:block}.nopc .pc{display:none}
 body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{display:none}
 .perf *{transition:none!important;animation:none!important}.perf .bg{display:none}.perf .card:hover,.perf .card:focus-visible{transform:none;box-shadow:none}
+/* ---- Modern layer: sleeker surfaces, motion and controls ---- */
+html{-webkit-text-size-adjust:100%}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:color-mix(in srgb,var(--accent) 45%,transparent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#main{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--text) 25%,transparent) transparent}
+#main::-webkit-scrollbar{width:10px;height:10px}
+#main::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text) 22%,transparent);border-radius:99px;border:2px solid transparent;background-clip:content-box}
+#main::-webkit-scrollbar-track{background:none}
+.page{max-width:1280px}
+#nav{align-self:center;width:min(620px,calc(100% - 24px));margin-bottom:14px;border:var(--bw) solid var(--line);border-radius:999px;box-shadow:0 14px 44px #000a;background:color-mix(in srgb,var(--solid) 72%,transparent)}
+[data-nav=left] #nav,[data-nav=right] #nav{width:auto;margin:14px;border-radius:24px}
+[data-nav=left] #nav button,[data-nav=right] #nav button{border-radius:16px}
+#nav button{border-radius:999px;padding:9px 14px}
+#nav button.on{background:color-mix(in srgb,var(--accent) 18%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent),0 6px 22px -8px var(--accent)}
+.hero{filter:drop-shadow(0 6px 30px color-mix(in srgb,var(--accent) 35%,transparent))}
+.search{position:relative;display:block;max-width:560px;margin-top:14px}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--mute);fill:none;stroke-width:2;stroke-linecap:round;pointer-events:none}
+.search .in{padding-left:42px;border-radius:999px;background:color-mix(in srgb,var(--text) 9%,transparent)}
+.search .in:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+#hq{max-width:none;margin-top:0}
+.skel{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw),1fr));gap:16px;margin-top:16px}
+.skel i{display:block;height:220px;border-radius:calc(var(--r) + 4px);border:var(--bw) solid var(--line);background:linear-gradient(100deg,color-mix(in srgb,var(--text) 6%,transparent) 40%,color-mix(in srgb,var(--text) 14%,transparent) 50%,color-mix(in srgb,var(--text) 6%,transparent) 60%);background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.card{border-radius:calc(var(--r) + 4px)}
+.card:hover,.card:focus-visible{box-shadow:var(--hs),0 24px 50px -20px #000c}
+.art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,#000a);pointer-events:none}
+.sv{backdrop-filter:blur(8px);border-radius:999px;box-shadow:0 4px 14px #0007;z-index:1}
+.sv.on{box-shadow:0 4px 16px -4px var(--accent)}
+.info h3{letter-spacing:.01em}
+#chips .btn{padding:.45em 1em;font-size:.85rem}
+.btn{border-radius:999px}
+.btn.on{box-shadow:0 8px 24px -10px var(--accent)}
+.bar .btn{box-shadow:0 6px 18px -12px #000c}
+#count{font-size:.85rem;margin-left:auto}
+.tile{border-radius:calc(var(--r) + 6px)}
+.tile b{font-size:1.7rem;letter-spacing:-.01em}
+.tile:hover{transform:translateY(-3px);box-shadow:var(--hs)}
+.panel{border-radius:calc(var(--r) + 6px);background:linear-gradient(180deg,color-mix(in srgb,var(--text) 8%,transparent),var(--card));box-shadow:0 20px 50px -30px #000d;transition:opacity .2s}
+.panel h2{font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.panel.hide{display:none}
+.sethead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+.sethead h1{margin-right:auto}
+.sethead .in{max-width:300px;border-radius:999px}
+.tg input[type=checkbox]{appearance:none;-webkit-appearance:none;width:42px;height:24px;flex:none;border-radius:999px;background:color-mix(in srgb,var(--text) 20%,transparent);position:relative;cursor:pointer;transition:.2s;margin:0}
+.tg input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 2px 6px #0008}
+.tg input[type=checkbox]:checked{background:var(--accent)}
+.tg input[type=checkbox]:checked::after{left:21px}
+.panel input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:99px;background:color-mix(in srgb,var(--text) 20%,transparent)}
+.panel input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid #ffffff33;box-shadow:0 4px 14px -2px var(--accent);cursor:pointer}
+.panel input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--accent);border:3px solid #ffffff33;cursor:pointer}
+input[type=color]{border-radius:12px}
+.in{transition:border-color .15s,box-shadow .15s}
+.in:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+#toast{border-radius:999px;padding:.6em 1.4em;box-shadow:0 16px 40px -10px var(--accent);font-weight:600}
+#bar{padding:10px 14px;gap:10px}
+#ptitle{font-size:.95rem}
+.srow span small{margin-left:6px}
+.libhead{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:4px}
+.libtitle h1{line-height:1.1}
+.libtitle #count{display:block;margin-top:4px}
+.libsearch{margin-top:0;flex:1;min-width:220px}
+.toolbar{position:sticky;top:8px;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 4px;padding:10px 12px;border:var(--bw) solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--solid) 78%,transparent);backdrop-filter:blur(14px);box-shadow:0 14px 34px -22px #000c}
+.tgroup{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tgroup .btn{display:inline-flex;align-items:center;gap:7px}
+.btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;text-shadow:none;box-shadow:0 8px 24px -10px var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.menu{position:relative}
+.menu-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:20;display:flex;flex-direction:column;gap:6px;min-width:190px;padding:8px;border:var(--bw) solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--solid) 90%,transparent);backdrop-filter:blur(16px);box-shadow:0 24px 60px -12px #000d}
+.menu-pop .btn{justify-content:flex-start;text-align:left;border-color:transparent;background:none;box-shadow:none}
+.menu-pop .btn:hover{border-color:var(--accent)}
+.menu-pop .btn.on{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+@media (max-width:640px){.toolbar{position:static}.libsearch{min-width:100%}}
+@media (max-width:640px){#nav{border-radius:22px}.sethead .in{max-width:none;flex:1}}
 </style>
 </head>
 <body>
@@ -97,25 +172,35 @@ body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{displ
   <section class="page on" id="p-home">
     <h1 class="hero" id="hname">Game Portal</h1>
     <p class="mute" id="clock"></p>
-    <input class="in" id="hq" type="search" placeholder="Search games and tools" autocomplete="off">
+    <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input class="in" id="hq" type="search" placeholder="Search games and tools" autocomplete="off"></label>
     <div id="hbody"></div>
   </section>
   <section class="page" id="p-lib">
-    <div class="bar">
-      <h1 id="lt">Games</h1>
-      <input class="in" id="q" type="search" placeholder="Search" autocomplete="off">
-      <select class="btn" data-k="sort" title="Sort"><option value="az">A to Z</option><option value="za">Z to A</option><option value="recent">Recently played</option><option value="plays">Most played</option></select>
-      <button class="btn" id="view">List view</button>
-      <button class="btn" id="rand">Random</button>
-      <button class="btn" id="covedit">Edit covers</button>
-      <button class="btn" id="preloadall">Preload all</button>
+    <div class="libhead">
+      <div class="libtitle"><h1 id="lt">Games</h1><span class="mute" id="count"></span></div>
+      <label class="search libsearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input class="in" id="q" type="search" placeholder="Search this section" autocomplete="off"></label>
+    </div>
+    <div class="toolbar">
+      <div class="tgroup" role="group" aria-label="View options">
+        <select class="btn" data-k="sort" title="Sort"><option value="az">A to Z</option><option value="za">Z to A</option><option value="recent">Recently played</option><option value="plays">Most played</option></select>
+        <button class="btn" id="view">List view</button>
+      </div>
+      <div class="tgroup" role="group" aria-label="Actions">
+        <button class="btn primary" id="rand"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>Random</button>
+        <div class="menu"><button class="btn" id="morebtn" aria-haspopup="true" aria-expanded="false" title="More actions">&middot;&middot;&middot;</button>
+          <div class="menu-pop" id="morepop" hidden>
+            <button class="btn" id="covedit">Edit covers</button>
+            <button class="btn" id="preloadall">Preload all</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="chips"></div>
     <div class="cards" id="grid"></div>
     <p class="mute" id="empty" hidden></p>
   </section>
   <section class="page" id="p-settings">
-    <h1>Settings</h1>
+    <div class="sethead"><h1>Settings</h1><input class="in" id="sset" type="search" placeholder="Filter settings" autocomplete="off"></div>
     <div class="grid2">
       <div class="panel"><h2>Color theme</h2>
         <div class="seg" id="themes"></div>
@@ -179,6 +264,7 @@ body.playing #app,body.playing .bg,body.playing #bgimg,body.playing #bgdim{displ
       </div>
       <div class="panel"><h2>General</h2>
         <div class="set"><label>Portal name</label><input class="in" type="text" data-k="name" maxlength="40"></div>
+        <div class="set seg"><button class="btn" id="cfgxp">Export settings</button><label class="btn">Import settings<input type="file" id="cfgimp" accept=".json,application/json" hidden></label></div>
         <div class="tg"><span>24-hour clock</span><input type="checkbox" data-k="clock24"></div>
         <div class="set seg"><button class="btn" id="sclear">Clear favorites and history</button><button class="btn" id="sreset">Reset settings</button></div>
       </div>
@@ -283,7 +369,9 @@ function shim(G,B){
 function renderSaves(){
   $('sstat').textContent=storageOK?'Browser storage is working. Game saves stay on this device until you clear your browser data.':'Browser storage is blocked here, so saves last only until you close this tab. Export a backup before you leave.';
   const o=allSaves(),ks=Object.keys(o).filter(g=>Object.keys(o[g]).length);
-  $('saves').innerHTML=ks.length?ks.map(g=>{const e=Object.entries(o[g]),b=e.reduce((a,[k,v])=>a+k.length+String(v).length,0);return `<div class="srow"><span>${esc((MAP.get(g)||{}).title||g)} <small class="mute">${e.length} items, ${Math.max(1,Math.round(b/1024))} KB</small></span><button class="btn" data-clr="${esc(g)}">Clear</button></div>`}).join(''):'<p class="mute">No saved game data yet. Games that use localStorage save here automatically.</p>';
+  const tot=ks.reduce((a,g)=>a+Object.entries(o[g]).reduce((x,[k,v])=>x+k.length+String(v).length,0),0);
+  const totHtml=ks.length?`<p class="mute">${ks.length} game${ks.length>1?'s':''} using ${Math.max(1,Math.round(tot/1024))} KB</p>`:'';
+  $('saves').innerHTML=totHtml+(ks.length?ks.map(g=>{const e=Object.entries(o[g]),b=e.reduce((a,[k,v])=>a+k.length+String(v).length,0);return `<div class="srow"><span>${esc((MAP.get(g)||{}).title||g)} <small class="mute">${e.length} items, ${Math.max(1,Math.round(b/1024))} KB</small></span><button class="btn" data-clr="${esc(g)}">Clear</button></div>`}).join(''):'<p class="mute">No saved game data yet. Games that use localStorage save here automatically.</p>');
 }
 function exportAll(){
   const o={v:1,saves:{},hub:{data:D,cfg}},s=allSaves();
@@ -526,6 +614,7 @@ function renderLib(){
   $('empty').hidden=r.length>0;
   $('empty').textContent=lib[kind].length?'No matches. Try a different search or filter.':`No ${kind} found. Put each game in its own folder inside the ${kind} folder on GitHub. `+notes.join('. ');
   $('chips').innerHTML=[['all','All'],['fav','Favorites'],['recent','Recent'],...tags.map(t=>[t,t])].map(([k,l])=>`<button class="btn ${k===tag?'on':''}" data-tag="${esc(k)}">${esc(l)}</button>`).join('');
+  try{$('count').textContent=r.length+' of '+lib[kind].length+' shown'}catch(e){}
 }
 function renderHome(){
   const q=$('hq').value.trim().toLowerCase(),grid=a=>`<div class="cards">${a.map(card).join('')}</div>`;
@@ -535,7 +624,11 @@ function renderHome(){
     (rec.length?'<h2>Continue</h2>'+grid(rec):'')+(fav.length?'<h2>Favorites</h2>'+grid(fav):'')+
     (rec.length||fav.length?'':'<p class="mute" style="margin-top:20px">'+(ALL.length?'Open a game or tool and it will show up here. Saved items appear here too.':'No games or tools found yet. '+notes.join('. '))+'</p>');
 }
-const refresh=()=>pg==='home'?renderHome():pg==='settings'?(renderSaves(),libStatus(),covStatus()):renderLib();
+function filterSettings(){
+  const el=$('sset');if(!el)return;const q=el.value.trim().toLowerCase();
+  document.querySelectorAll('#p-settings .panel').forEach(p=>{p.classList.toggle('hide',!!q&&!(p.textContent||'').toLowerCase().includes(q))});
+}
+const refresh=()=>pg==='home'?renderHome():pg==='settings'?(renderSaves(),libStatus(),covStatus(),filterSettings()):renderLib();
 function go(p){
   pg=p;document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   $(p==='games'||p==='tools'?'p-lib':'p-'+p).classList.add('on');
@@ -618,17 +711,23 @@ document.addEventListener('input',e=>{
 document.addEventListener('keydown',e=>{
   if(!$('player').hidden)return;
   const a=document.activeElement;
+  if(e.key==='Escape'){try{const p=$('morepop');if(p&&!p.hidden){p.hidden=true;$('morebtn').setAttribute('aria-expanded','false');return}}catch(x){}}
   if(e.key==='/'&&!/INPUT|SELECT/.test(a.tagName)&&pg!=='settings'){e.preventDefault();$(pg==='home'?'hq':'q').focus()}
+  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();if(pg!=='home')go('home');$('hq').focus()}
   else if(e.key==='Enter'&&a.classList.contains('card'))a.click();
   else if(e.key==='Escape'&&/INPUT/.test(a.tagName)){a.value='';a.blur();refresh()}
 });
 let dq;const deb=f=>()=>{clearTimeout(dq);dq=setTimeout(f,120)};
 $('hq').oninput=deb(renderHome);$('q').oninput=deb(()=>{cap=96;renderLib()});
+try{$('sset').oninput=filterSettings}catch(e){}
 $('lscan').onclick=async()=>{$('lstat').textContent='Scanning...';await loadLib(true);libStatus();toast('Library rescanned')};
 $('view').onclick=()=>{cfg.view=cfg.view==='list'?'grid':'list';saveC();apply()};
 $('rand').onclick=()=>{const r=libList();if(r.length)open(r[Math.random()*r.length|0]);else toast('Nothing to pick from')};
 $('covedit').onclick=()=>{covMode=!covMode;document.body.classList.toggle('covmode',covMode);$('covedit').classList.toggle('on',covMode);if(covMode)toast(RI&&token?'Click Cover on a card. It will also be saved to GitHub.':'Click Cover on a card. Add a GitHub token in Settings to also save it to your repo.',3500)};
 $('preloadall').onclick=()=>{const r=libList();if(!r.length)return toast('Nothing to preload');let n=0;for(const g of r){if(!(navigator.connection&&navigator.connection.saveData)){getGame(new URL(g.file,ROOT).href).catch(()=>{});n++}}toast('Preloading '+n+' items...',2000)};
+$('morebtn').onclick=()=>{const p=$('morepop'),open=p.hidden;p.hidden=!open;$('morebtn').setAttribute('aria-expanded',String(open))};
+$('morepop').addEventListener('click',()=>{$('morepop').hidden=true;$('morebtn').setAttribute('aria-expanded','false')});
+document.addEventListener('click',e=>{const p=$('morepop');if(p&&!p.hidden&&!e.target.closest('.menu')){p.hidden=true;$('morebtn').setAttribute('aria-expanded','false')}});
 $('clearcache').onclick=()=>{GC.clear();reval.clear();caches.delete(CN).then(()=>toast('Game cache cleared')).catch(()=>toast('Could not clear cache'))};
 $('covfile').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';const g=MAP.get(covKey);if(!f||!g)return;
@@ -670,6 +769,8 @@ $('simp').onchange=async e=>{
     renderSaves();toast('Imported '+n+' saved items');
   }catch(x){toast('That is not a valid backup file')}
 };
+$('cfgxp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({v:1,cfg})],{type:'application/json'}));a.download='portal-settings.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Settings exported')};
+$('cfgimp').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const o=JSON.parse(await f.text());if(!o||typeof o.cfg!=='object')throw 0;cfg=Object.assign({},DEF,o.cfg);saveC();apply();sync();toast('Settings imported')}catch(x){toast('That is not a valid settings file')}};
 $('bgclear').onclick=()=>{bg='';try{localStorage.removeItem('gp_bg')}catch(e){}apply()};
 $('bgfile').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
@@ -690,7 +791,7 @@ addEventListener('beforeunload',e=>{if(cfg.warn){e.preventDefault();e.returnValu
   try{apply()}catch(e){}try{sync()}catch(e){}try{tick()}catch(e){}try{setInterval(tick,30000)}catch(e){}
   try{if(RI){const l=document.createElement('link');l.rel='preconnect';l.href=new URL(ROOT).origin;document.head.appendChild(l)}}catch(e){}
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  $('hbody').innerHTML='<p class="mute" style="margin-top:20px">Loading library...</p>';
+  $('hbody').innerHTML='<div class="skel"><i></i><i></i><i></i><i></i><i></i><i></i></div>';
   try{await Promise.race([loadLib(),new Promise((_,rej)=>setTimeout(()=>rej(Error('library load timed out')),25000))])}catch(e){try{notes.push('library load problem: '+e.message)}catch(x){}}
   try{go(['home','games','tools'].includes(cfg.start)?cfg.start:'home')}catch(e){try{pg='home';renderHome()}catch(x){}}
 })();

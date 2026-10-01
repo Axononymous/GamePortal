@@ -50,6 +50,23 @@ h1{font-size:clamp(1.8rem,8vw,2.8rem);letter-spacing:.04em;background:linear-gra
 .mir{display:block;margin:0 auto 18px;max-width:340px;text-align:left;font-size:.82rem;color:#b9c3ee}
 .mir select{width:100%;margin-top:6px;padding:.6em .8em;border-radius:12px;border:1px solid #ffffff30;background:#ffffff12;color:#eaf0ff;font:inherit}
 .mir option,.mir optgroup{color:#111;background:#fff}
+/* ---- Modern layer ---- */
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 0%,transparent 55%,#0007)}
+.card{border:1px solid transparent;background:linear-gradient(#10122bf2,#0d0f26f2) padding-box,linear-gradient(135deg,#22e4ff70,#b26bff70,#ff4d9d70) border-box;box-shadow:0 40px 100px -20px #000d,0 0 0 1px #ffffff10}
+.logo{box-shadow:0 0 0 1px #ffffff2e,0 14px 44px -8px #7b5cffbb}
+h1{letter-spacing:.02em;filter:drop-shadow(0 4px 24px #7b5cff55)}
+.sub{font-size:1.02rem}
+.chips i{backdrop-filter:blur(6px)}
+.go{position:relative;overflow:hidden}
+.go::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,#ffffff55,transparent);transform:skewX(-20deg);animation:shine 3.2s ease-in-out infinite}
+@keyframes shine{0%,55%{left:-60%}100%{left:130%}}
+.mir select{border-radius:999px;transition:.15s}
+.mir select:focus{outline:none;border-color:#22e4ff66;box-shadow:0 0 0 3px #22e4ff2e}
+.status{border-radius:16px;backdrop-filter:blur(8px)}
+.card kbd{font:600 .78rem system-ui,sans-serif;padding:2px 8px;border-radius:6px;background:#ffffff14;border:1px solid #ffffff2c;border-bottom-width:2px}
+.foot{color:#9aa5d6}
+@media (prefers-reduced-motion:reduce){.go::after{animation:none;display:none}}
 </style>
 </head>
 <body>
@@ -62,7 +79,7 @@ h1{font-size:clamp(1.8rem,8vw,2.8rem);letter-spacing:.04em;background:linear-gra
   <label class="mir">Mirror<select id="mirror"></select></label>
   <button class="go" id="go">Launch Game</button>
   <div class="status" id="status" role="status" aria-live="polite"></div>
-  <p class="foot">The portal opens in a new tab.</p>
+  <p class="foot">The portal opens in a new tab &middot; press <kbd>Enter</kbd> to launch</p>
 </main>
 <script>
 const $ = id => document.getElementById(id);
@@ -116,6 +133,7 @@ sel.innerHTML = '<option value="auto">Auto (try jsDelivr hosts in order)</option
   '<optgroup label="Third-party mirrors (not run by jsDelivr)">' + MIRRORS_THIRD_PARTY.map(opt).join("") + "</optgroup>";
 try{ const s = localStorage.getItem("mirror"); if (s && [...sel.options].some(o => o.value === s)) sel.value = s; }catch(e){}
 sel.addEventListener("change", () => { try{ localStorage.setItem("mirror", sel.value); }catch(e){} });
+document.addEventListener("keydown", e => { if(e.key === "Enter" && !btn.disabled && document.activeElement !== sel) btn.click(); });
 
 btn.addEventListener("click", async () => {
   if (!HUB_URL || HUB_URL.indexOf("YOUR_JSDELIVR") !== -1){
