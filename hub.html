@@ -301,7 +301,7 @@ body::before{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opa
 </nav>
 </div>
 <section id="player" hidden>
-  <div id="bar"><button class="btn" id="back">Back</button><b id="ptitle"></b><button class="btn" id="pfav">Save</button><button class="btn" id="reload">Restart</button><button class="btn" id="full">Fullscreen</button></div>
+  <div id="bar"><button class="btn" id="back">Back</button><b id="ptitle"></b><button class="btn" id="pfav">Save</button><button class="btn" id="reload">Restart</button><button class="btn" id="raw">Open raw</button><button class="btn" id="full">Fullscreen</button></div>
   <div id="msg"></div>
   <iframe id="frame" title="Content" allow="fullscreen; autoplay; gamepad; accelerometer; gyroscope; clipboard-write; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-orientation-lock allow-presentation"></iframe>
 </section>
@@ -384,7 +384,7 @@ function shim(G,B){
     }
   }catch(e){}
   try{
-    var rel=function(u){return typeof u==='string'&&/^\/(?!\/)/.test(u)?B+u.slice(1):u};
+    var rel=function(u){if(typeof u!=='string')return u;if(/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(u)||u.indexOf('blob:')===0||u.indexOf('data:')===0)return u;try{return new URL(u,B).href}catch(e){return u}};
     var fx=window.fetch;
     if(fx)window.fetch=function(u,o){return fx.call(this,rel(u),o)};
     var xo=XMLHttpRequest.prototype.open;
@@ -456,21 +456,24 @@ function getGame(url,onP){ /* memory cache -> Cache Storage (opens instantly, re
   if(GC.size>4)GC.delete(GC.keys().next().value);
   return p;
 }
-const tagFor=(base,gk)=>'<base href="'+base+'"><script>('+shim.toString()+')('+JSON.stringify(gk).replace(/</g,'\\u003c')+','+JSON.stringify(base).replace(/</g,'\\u003c')+')<\/script>';
+const tagFor=(base,gk,bb)=>((base?'<base href="'+base+'">':'')+'<script>('+shim.toString()+')('+JSON.stringify(gk).replace(/</g,'\\u003c')+','+JSON.stringify(bb).replace(/</g,'\\u003c')+')<\/script>');
 function spot(s){
   let m=/<head[^>]*>/i.exec(s);if(m)return[m.index+m[0].length,'',''];
   m=/<html[^>]*>/i.exec(s);if(m)return[m.index+m[0].length,'<head>','</head>'];
   m=/<!doctype[^>]*>/i.exec(s);return[m?m.index+m[0].length:0,'',''];
 }
 function prep(buf,base,gk){ /* builds the page as a Blob: no giant strings for big games */
-  const tag=tagFor(base,gk);
+  const head=buf.length<3e6?new TextDecoder().decode(buf):new TextDecoder('latin1').decode(buf.subarray(0,65536));
+  let B=base,tag=tagFor(base,gk,base);
+  const bm=/<base[^>]*href\s*=\s*["']([^"']+)["']/i.exec(head.split(/<body[\s>]/i)[0]);
+  if(bm){try{B=new URL(bm[1],base).href;tag=tagFor(null,gk,B)}catch(e){}} /* respect the game's own base tag when it has one */
   if(buf.length<3e6){
-    let s=new TextDecoder().decode(buf);
-    s=s.replace(/(\s(?:src|href|poster|action|data-src)\s*=\s*["'])\/(?!\/)/gi,(m,a)=>a+base).replace(/url\(\s*(["']?)\/(?!\/)/gi,(m,a)=>'url('+a+base);
+    let s=head;
+    s=s.replace(/(\s(?:src|href|poster|action|data-src)\s*=\s*["'])\/(?!\/)/gi,(m,a)=>a+B).replace(/url\(\s*(["']?)\/(?!\/)/gi,(m,a)=>'url('+a+B);
     const [i,a,b]=spot(s);
     return new Blob([s.slice(0,i),a,tag,b,s.slice(i)],{type:'text/html;charset=utf-8'});
   }
-  const [i,a,b]=spot(new TextDecoder('latin1').decode(buf.subarray(0,65536)));
+  const [i,a,b]=spot(head);
   return new Blob([buf.subarray(0,i),a,tag,b,buf.subarray(i)],{type:'text/html;charset=utf-8'});
 }
 
@@ -688,7 +691,7 @@ async function open(g){
       const direct=new URL(g.file,ROOT).href;
       if(direct.startsWith('file:')||new URL(direct).origin===location.origin){ready=true;setFrame(direct);D.plays[g._key]=(D.plays[g._key]||0)+1;D.last[g._key]=Date.now();saveD();return}
     }catch(x){}
-    $('msg').innerHTML='<div><h3>Could not load '+esc(g.title)+'</h3><p>'+esc(e.message)+'</p><br><button class="btn" id="retry">Try again</button></div>';
+    $('msg').innerHTML='<div><h3>Could not load '+esc(g.title)+'</h3><p>'+esc(e.message)+'</p><p class="mute">Tip: on school or filtered wifi, relaunch the portal from another mirror and try again.</p><br><button class="btn" id="retry">Try again</button></div>';
   }
 }
 $('frame').onload=()=>{if(!ready)return;$('msg').hidden=true;$('frame').focus();try{$('frame').contentWindow.focus()}catch(e){}};
@@ -780,6 +783,7 @@ $('cclr').onclick=()=>{cfg.cimg='';saveC();apply()};
 $('back').onclick=()=>{cur=null;ready=false;setFrame('');$('player').hidden=true;document.body.classList.remove('playing');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});sv.flush();refresh()};
 $('pfav').onclick=()=>cur&&toggleFav(cur._key);
 $('reload').onclick=()=>open(cur);
+$('raw').onclick=()=>{if(!cur)return;try{window.open(new URL(cur.file,ROOT).href,'_blank','noopener')}catch(e){toast('Could not open')}};
 $('full').onclick=()=>{const f=$('frame');(f.requestFullscreen||f.webkitRequestFullscreen||(()=>toast('Fullscreen is not available')))?.call(f)};
 $('accreset').onclick=()=>{cfg.accent='';saveC();apply();sync()};
 $('sclear').onclick=()=>{D={fav:{},plays:{},last:{}};saveD();refresh();toast('Favorites and history cleared')};
