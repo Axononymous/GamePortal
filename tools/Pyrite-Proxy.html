@@ -173,8 +173,8 @@ main{height:calc(100vh - 53px);position:relative}
 
     <div class="sec"><h4>browsing</h4>
       <select class="field" id="engine">
-        <option value="https://www.google.com/search?q=%s">google</option>
         <option value="https://duckduckgo.com/?q=%s">duckduckgo</option>
+        <option value="https://www.google.com/search?q=%s">google</option>
         <option value="https://www.bing.com/search?q=%s">bing</option>
         <option value="https://search.brave.com/search?q=%s">brave</option>
       </select>
@@ -194,6 +194,7 @@ main{height:calc(100vh - 53px);position:relative}
         <option value="custom">custom...</option>
       </select>
       <div style="display:flex;gap:6px;margin-top:6px"><input class="field" id="customTitle" placeholder="custom title" /><input class="field" id="panicKey" maxlength="1" placeholder="key" style="max-width:60px" /></div>
+      <input class="field" id="customIcon" placeholder="custom favicon url (optional)" style="margin-top:6px" />
       <input class="field" id="panicUrl" placeholder="panic url (default: classroom)" style="margin-top:6px" />
       <div class="btnrow"><button class="btn" id="applyCloak">apply</button><button class="btn" id="panicNow">panic</button></div>
     </div>
@@ -218,10 +219,16 @@ function set(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
 
 var S = Object.assign({
   worker: DEFAULT_WORKER, theme:"dark", accent:"#d9a521",
-  anim:true, engine:"https://www.google.com/search?q=%s",
+  anim:true, engine:"https://duckduckgo.com/?q=%s",
   https:true, forms:true, popups:true, blankGo:false,
-  cloak:"default", customTitle:"", panicKey:"`", panicUrl:"https://classroom.google.com"
+  cloak:"default", customTitle:"", customIcon:"", panicKey:"`", panicUrl:"https://classroom.google.com"
 }, get("pyrite-settings",{}));
+
+// migrate old installs that still default to google
+if (S.engine && S.engine.indexOf("google.com/search") !== -1) {
+  S.engine = "https://duckduckgo.com/?q=%s";
+  set("pyrite-settings", S);
+}
 
 var historyStack = get("pyrite-history",[]);
 var histIdx = historyStack.length - 1;
@@ -250,7 +257,7 @@ function applySettings(){
   // turn off drawer animation if user disabled it
   document.querySelectorAll(".drawer").forEach(function(el){ el.style.transition = S.anim ? "" : "none"; });
   $("#workerUrl").value=S.worker; $("#theme").value=S.theme; $("#engine").value=S.engine;
-  $("#customTitle").value=S.customTitle||""; $("#panicKey").value=S.panicKey||""; $("#panicUrl").value=S.panicUrl||"";
+  $("#customTitle").value=S.customTitle||""; $("#customIcon").value=S.customIcon||""; $("#panicKey").value=S.panicKey||""; $("#panicUrl").value=S.panicUrl||"";
   $("#cloak").value=S.cloak;
   flip($("#swAnim"),S.anim); flip($("#swHttps"),S.https); flip($("#swForms"),S.forms); flip($("#swPopups"),S.popups); flip($("#swBlank"),S.blankGo);
   document.querySelectorAll(".dotpick").forEach(function(el){ el.classList.toggle("on", el.dataset.c===S.accent); });
@@ -262,10 +269,27 @@ function applySettings(){
   set("pyrite-settings",S);
 }
 
-var CLOAKS={default:"pyrite",classroom:"Google Classroom",docs:"Untitled document - Google Docs",drive:"My Drive - Google Drive",canvas:"Dashboard - Canvas"};
+var DEFAULT_ICON = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23d9a521'/></svg>";
+var CLOAKS={
+  default:{t:"pyrite",i:DEFAULT_ICON},
+  classroom:{t:"Google Classroom",i:"https://www.google.com/s2/favicons?sz=64&domain=classroom.google.com"},
+  docs:{t:"Untitled document - Google Docs",i:"https://www.google.com/s2/favicons?sz=64&domain=docs.google.com"},
+  drive:{t:"My Drive - Google Drive",i:"https://www.google.com/s2/favicons?sz=64&domain=drive.google.com"},
+  canvas:{t:"Dashboard - Canvas",i:"https://www.google.com/s2/favicons?sz=64&domain=canvas.instructure.com"}
+};
+function setIcon(url){
+  var link = document.querySelector("link[rel=icon]");
+  if(!link){ link=document.createElement("link"); link.rel="icon"; document.head.appendChild(link); }
+  link.href = url;
+  var short = document.querySelector("link[rel='shortcut icon']");
+  if(short) short.href = url;
+}
 function applyCloak(){
-  var title = S.cloak==="custom" ? (S.customTitle||"Home") : (CLOAKS[S.cloak]||CLOAKS.default);
+  var c = CLOAKS[S.cloak] || CLOAKS.default;
+  var title = S.cloak==="custom" ? (S.customTitle||"Home") : c.t;
+  var icon = S.cloak==="custom" ? (S.customIcon||DEFAULT_ICON) : c.i;
   document.title=title;
+  setIcon(icon);
 }
 function setProgress(p){ var b=$("#progress"); b.style.width=p+"%"; if(p>=100) setTimeout(function(){b.style.width="0%";},300); }
 
@@ -373,6 +397,7 @@ $("#theme").onchange=function(e){S.theme=e.target.value;applySettings();};
 $("#engine").onchange=function(e){S.engine=e.target.value;applySettings();};
 $("#cloak").onchange=function(e){S.cloak=e.target.value;applySettings();applyCloak();};
 $("#customTitle").oninput=function(e){S.customTitle=e.target.value;if(S.cloak==="custom")applyCloak();set("pyrite-settings",S);};
+$("#customIcon").oninput=function(e){S.customIcon=e.target.value;if(S.cloak==="custom")applyCloak();set("pyrite-settings",S);};
 $("#panicKey").oninput=function(e){S.panicKey=e.target.value;set("pyrite-settings",S);};
 $("#panicUrl").oninput=function(e){S.panicUrl=e.target.value;set("pyrite-settings",S);};
 $("#applyCloak").onclick=function(){applyCloak();toast("updated");};
